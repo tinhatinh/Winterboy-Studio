@@ -64,8 +64,8 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 ### Các bước chạy code:
 1. **Tải mã nguồn**: Clone repository này về máy.
    ```bash
-   git clone https://github.com/TEN_CUA_BAN/WinterboyStudio-OpenSource.git
-   cd WinterboyStudio-OpenSource
+   git clone https://github.com/tinhatinh/Winterboy-Studio.git
+   cd Winterboy-Studio
    ```
 2. **Cài đặt thư viện**:
    Dự án sử dụng nhiều thư viện xử lý hình ảnh và GUI, cài đặt qua pip:
