@@ -12,6 +12,8 @@ Mình quyết định open-source Winterboy Studio để mọi người có th�
 
 Hy vọng project có thể hữu ích cho anh em.
 
+![Winterboy Studio Preview](assets/ui_preview.png)
+
 ---
 
 ## 🌟 Các tính năng nổi bật (Features)
