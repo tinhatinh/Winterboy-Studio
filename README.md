@@ -1,6 +1,16 @@
 # Winterboy Studio - Open Source Edition ❄️
 
-Chào các đạo hữu, sau 1 thời gian mò mẫm reverse engineer ở trên các group MMO, tool thì cuối cùng t đã hiểu được workflow của các tool làm video trên đó. Winterboy Studio có hầu như đủ công cụ hỗ trợ các nhà sáng tạo nội dung, editor và tiktoker. Do t học an toàn cũng ko giỏi code lắm nên vibe code khá là nhiều, nhưng cốt lõi workflow thì đầy đủ, t open-source cho mọi người dùng chung, nếu bác nào muốn mày mò thì cứ fork về làm tiếp
+Chào các đạo hữu,
+
+Sau một thời gian mò mẫm reverse engineer các tool trên những group MMO, cuối cùng mình cũng hiểu được workflow phía sau cách các tool làm video hoạt động.
+
+Vì vậy mình build Winterboy Studio - một bộ công cụ tương đối đầy đủ để hỗ trợ các nhà sáng tạo nội dung, editor và TikToker trong quá trình làm video.
+
+Do mình học An toàn thông tin và cũng không quá giỏi code nên project có khá nhiều đoạn được vibe code. Tuy nhiên, phần cốt lõi về workflow và các chức năng chính thì mình đã hoàn thiện tương đối đầy đủ.
+
+Mình quyết định open-source Winterboy Studio để mọi người có thể dùng chung. Bác nào hứng thú muốn nghiên cứu, customize hoặc phát triển thêm thì cứ fork về làm tiếp.
+
+Hy vọng project có thể hữu ích cho anh em.
 
 ---
 
@@ -25,6 +35,11 @@ Chào các đạo hữu, sau 1 thời gian mò mẫm reverse engineer ở trên 
    - Dựng video hoàn toàn tự động dựa trên prompt và tài nguyên có sẵn.
    - Tự động tách nền (Vocal / BGM Separation) sử dụng thuật toán Demucs (AI).
    - Tự chọn nhạc nền (BGM), trộn âm lượng (Audio ducking) thông minh.
+
+5. **Chống quét bản quyền (Bypass / Reup MMO)**:
+   - Các thuật toán xử lý video chuyên sâu: xáo trộn Subpixel, thêm nhiễu (Noise), đổi Colorspace.
+   - Can thiệp tốc độ (Tempo), khung hình (GOP), thay đổi Zoom/Pan động (Dynamic motion) để né thuật toán dò trùng lặp.
+   - Chế độ **Ultimate Bypass** giúp lách bản quyền nền tảng (TikTok, YouTube), tạo ra video 100% unique cho dân Reup.
 
 ---
 
