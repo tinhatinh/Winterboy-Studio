@@ -28,7 +28,16 @@ Chào mừng bạn đến với phiên bản mã nguồn mở của Winterboy St
 
 ---
 
-## 🚀 Hướng dẫn cài đặt và chạy từ mã nguồn
+## 📥 Tải về và sử dụng ngay (Không cần cài đặt)
+Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ cần tải bản đóng gói sẵn (.exe) và sử dụng ngay:
+1. Nhấn vào mục **[Releases]** ở menu bên phải của trang GitHub này (hoặc biểu tượng tag).
+2. Tải về file `WinterboyStudio_OpenSource_Release.zip`.
+3. Giải nén ra một thư mục bất kỳ.
+4. Chạy file `WinterboyStudio.exe` để bắt đầu làm việc!
+
+---
+
+## 🚀 Dành cho nhà phát triển (Chạy từ mã nguồn)
 
 ### Yêu cầu hệ thống:
 - Hệ điều hành: Windows 10 / 11.
