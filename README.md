@@ -1,6 +1,6 @@
 # Winterboy Studio - Open Source Edition ❄️
 
-Chào mừng bạn đến với phiên bản mã nguồn mở của Winterboy Studio. Đây là công cụ đắc lực hỗ trợ các nhà sáng tạo nội dung, editor và tiktoker với hàng loạt tính năng xử lý video, AI tự động hoá chuyên nghiệp.
+Chào các đạo hữu, sau 1 thời gian mò mẫm reverse engineer ở trên các group MMO, tool thì cuối cùng t đã hiểu được workflow của các tool làm video trên đó. Winterboy Studio có hầu như đủ công cụ hỗ trợ các nhà sáng tạo nội dung, editor và tiktoker. Do t học an toàn cũng ko giỏi code lắm nên vibe code khá là nhiều, nhưng cốt lõi workflow thì đầy đủ, t open-source cho mọi người dùng chung, nếu bác nào muốn mày mò thì cứ fork về làm tiếp
 
 ---
 
@@ -12,7 +12,7 @@ Chào mừng bạn đến với phiên bản mã nguồn mở của Winterboy St
    - Chỉnh sửa, xuất/nhập file SRT dễ dàng.
 
 2. **Text-To-Speech (Lồng tiếng AI - TTS)**:
-   - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS, ElevenLabs, ZeroTTS.
+   - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS, ElevenLabs, ZeroTTS, VietneuTTS(clone voice).
    - Cho phép tinh chỉnh tốc độ, âm lượng, ghép nối audio khớp với timeline video.
 
 3. **Chỉnh sửa Video & Render (Video Editor)**:
