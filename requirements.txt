@@ -1,0 +1,8 @@
+customtkinter>=5.2.0
+tkinter
+pydub
+requests
+opencv-python
+numpy
+moviepy
+edge-tts
