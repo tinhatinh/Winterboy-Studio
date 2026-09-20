@@ -1,11 +1,6 @@
-# MumuStudio Pro (Winterboy Studio) - Open Source Edition ❄️
+# Winterboy Studio - Open Source Edition ❄️
 
-Chào mừng bạn đến với phiên bản mã nguồn mở của MumuStudio Pro (Winterboy Studio). Đây là công cụ đắc lực hỗ trợ các nhà sáng tạo nội dung, editor và tiktoker với hàng loạt tính năng xử lý video, AI tự động hoá chuyên nghiệp.
-
-Phiên bản này đã được thiết kế lại hoàn toàn:
-- **Bypass License 100%**: Loại bỏ toàn bộ yêu cầu đăng nhập, máy chủ kiểm tra bản quyền. Bạn có gói Lifetime vĩnh viễn mặc định!
-- **Giao diện Light Mode**: Mặc định sử dụng giao diện Sáng (Light Theme) với tone màu xanh chủ đạo tươi mát thay vì giao diện tối ngột ngạt.
-- **Tính năng Tuyết rơi (Snow Overlay)**: Bổ sung hiệu ứng tuyết rơi bắt mắt ngay trong màn hình làm việc, có thể **Bật/Tắt dễ dàng** thông qua nút bấm trên thanh Header.
+Chào mừng bạn đến với phiên bản mã nguồn mở của Winterboy Studio. Đây là công cụ đắc lực hỗ trợ các nhà sáng tạo nội dung, editor và tiktoker với hàng loạt tính năng xử lý video, AI tự động hoá chuyên nghiệp.
 
 ---
 
@@ -17,7 +12,7 @@ Phiên bản này đã được thiết kế lại hoàn toàn:
    - Chỉnh sửa, xuất/nhập file SRT dễ dàng.
 
 2. **Text-To-Speech (Lồng tiếng AI - TTS)**:
-   - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS (Miễn phí), ElevenLabs, ZeroTTS.
+   - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS, ElevenLabs, ZeroTTS.
    - Cho phép tinh chỉnh tốc độ, âm lượng, ghép nối audio khớp với timeline video.
 
 3. **Chỉnh sửa Video & Render (Video Editor)**:
@@ -43,8 +38,8 @@ Phiên bản này đã được thiết kế lại hoàn toàn:
 ### Các bước chạy code:
 1. **Tải mã nguồn**: Clone repository này về máy.
    ```bash
-   git clone https://github.com/TEN_CUA_BAN/MumuStudio-OpenSource.git
-   cd MumuStudio-OpenSource
+   git clone https://github.com/TEN_CUA_BAN/WinterboyStudio-OpenSource.git
+   cd WinterboyStudio-OpenSource
    ```
 2. **Cài đặt thư viện**:
    Dự án sử dụng nhiều thư viện xử lý hình ảnh và GUI, cài đặt qua pip:
