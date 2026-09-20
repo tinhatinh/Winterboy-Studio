@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: story_tour.pyc (Python 3.12)
 
-'''Hệ thống hướng dẫn tương tác từng bước (Interactive Guided Tour) cho Mumu Studio Pro.
+'''Hệ thống hướng dẫn tương tác từng bước (Interactive Guided Tour) cho Winterboy Studio Pro.
 
 Tự động làm nổi bật (highlight) từng khối chức năng trên màn hình,
 hiển thị thẻ chú thích ngắn gọn, súc tích và cung cấp các nút

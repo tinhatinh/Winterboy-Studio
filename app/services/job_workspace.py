@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: job_workspace.pyc (Python 3.12)
 
-'''Quản lý workspace bền vững cho từng tác vụ của Mumu Studio.
+'''Quản lý workspace bền vững cho từng tác vụ của Winterboy Studio.
 
 Không dùng ``temp`` cho dữ liệu người dùng.  Mỗi lần STT, dịch hoặc render
 đều có một thư mục mẹ riêng trong ``output/jobs`` để dễ kiểm tra và không ghi
@@ -16,8 +16,8 @@ from pathlib import Path
 import os
 import sys
 APP_ROOT = Path(__file__).resolve().parents[2]
-if os.environ.get('MUMU_PROJECT_ROOT'):
-    PROJECT_ROOT = Path(os.environ['MUMU_PROJECT_ROOT']).resolve()
+if os.environ.get('WINTERBOY_PROJECT_ROOT'):
+    PROJECT_ROOT = Path(os.environ['WINTERBOY_PROJECT_ROOT']).resolve()
 elif getattr(sys, 'frozen', False):
     PROJECT_ROOT = Path(sys.executable).resolve().parent
 elif (APP_ROOT / 'config.json').is_file():

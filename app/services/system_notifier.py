@@ -16,7 +16,7 @@ import sys
 import threading
 from pathlib import Path
 logger = logging.getLogger(__name__)
-APP_ID = 'Mumu Studio Pro'
+APP_ID = 'Winterboy Studio Pro'
 
 def _send_toast_worker(title = None, message = None, app_id = None, sound = ('title', 'str', 'message', 'str', 'app_id', 'str', 'sound', 'bool', 'return', 'bool')):
     '''Worker thực thi gửi Toast qua PowerShell WinRT.'''
@@ -74,7 +74,7 @@ def notify_render_complete(video_name = None, count = None, output_path = None):
         msg = f'''Đã xuất hoàn tất {count} video (bao gồm {name})'''
     else:
         msg = f'''Video đã xuất hoàn tất: {name}'''
-    send_windows_toast('Mumu Studio Pro · Xuất Video', msg)
+    send_windows_toast('Winterboy Studio Pro · Xuất Video', msg)
 
 
 def notify_render_error(error_msg = None):
@@ -82,12 +82,12 @@ def notify_render_error(error_msg = None):
     short_err = str(error_msg).strip()
     if len(short_err) > 120:
         short_err = short_err[:117] + '...'
-    send_windows_toast('Mumu Studio Pro · Lỗi Xuất Video', f'''❌ {short_err}''')
+    send_windows_toast('Winterboy Studio Pro · Lỗi Xuất Video', f'''❌ {short_err}''')
 
 
 def notify_mp3_complete(audio_name = None):
     '''Thông báo khi xuất file âm thanh MP3 hoàn tất.'''
     name = Path(audio_name).name if audio_name else 'audio.mp3'
     msg = f'''🎵 File âm thanh đã sẵn sàng: {name}'''
-    send_windows_toast('Mumu Studio Pro · Âm Thanh', msg)
+    send_windows_toast('Winterboy Studio Pro · Âm Thanh', msg)
 

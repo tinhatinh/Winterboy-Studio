@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: story_engine.pyc (Python 3.12)
 
-'''Dịch vụ bóc tách kịch bản kể chuyện (AI Storytelling Engine) cho Mumu Studio Pro.
+'''Dịch vụ bóc tách kịch bản kể chuyện (AI Storytelling Engine) cho Winterboy Studio Pro.
 
 Bóc tách kịch bản thành từng Scene phân cảnh chuẩn điện ảnh, gán gợi ý hình ảnh
 tiếng Việt (visual concept) và prompt tiếng Anh chuẩn cho AI Image Generator.
@@ -462,7 +462,7 @@ def _call_openai_compatible_story(provider, api_key = None, model = None, system
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'''Bearer {api_key}''',
-        'User-Agent': 'MumuStudio/3.0' }
+        'User-Agent': 'WinterboyStudio/3.0' }
     req = urllib.request.Request(endpoint, data = req_data, headers = headers, method = 'POST')
 # WARNING: Decompyle incomplete
 

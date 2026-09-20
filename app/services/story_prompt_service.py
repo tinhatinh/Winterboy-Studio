@@ -224,7 +224,7 @@ def export_prompts_to_txt(scenes = None, output_path = None, visual_bible = None
     out_file.parent.mkdir(parents = True, exist_ok = True)
     header = [
         '================================================================================',
-        'DANH SÁCH PROMPT HÌNH ẢNH & VIDEO AI ĐỒNG BỘ CHO KỂ CHUYỆN (MUMU STUDIO PRO)',
+        'DANH SÁCH PROMPT HÌNH ẢNH & VIDEO AI ĐỒNG BỘ CHO KỂ CHUYỆN (WINTERBOY STUDIO PRO)',
         '================================================================================\n']
     if visual_bible:
         header.append('--- KINH THÁNH TẠO HÌNH (VISUAL CONTINUITY BIBLE) ---')

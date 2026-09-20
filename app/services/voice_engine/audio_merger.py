@@ -4,7 +4,7 @@
 '''
 AudioSyncMerger — Bộ công cụ đồng bộ và gộp âm thanh theo Timeline SRT.
 
-Học hỏi kiến trúc từ AudioSyncEngine của Mumu Studio:
+Học hỏi kiến trúc từ AudioSyncEngine của Winterboy Studio:
 1. Mỗi câu thoại trong SRT có mốc [start_s, end_s] -> D_sub = end_s - start_s.
 2. Đo độ dài thực tế D_voice của file MP3 được ElevenLabs tạo ra.
 3. Nếu D_voice > D_sub:

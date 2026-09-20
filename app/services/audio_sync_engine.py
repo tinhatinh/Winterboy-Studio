@@ -343,7 +343,7 @@ exc = Nonelogger.debug('Cannot write TTS duration metadata %s: %s', path, exc)ex
         cache_hash = hashlib.sha256(cache_key.encode('utf-8')).hexdigest()
         legacy_sha = hashlib.sha256(raw_legacy_key.encode('utf-8')).hexdigest()
         legacy_md5 = hashlib.md5(raw_legacy_key.encode('utf-8')).hexdigest()
-        persistent_dir = Path.home() / '.mumu' / 'tts_sentences'
+        persistent_dir = Path.home() / '.winterboy' / 'tts_sentences'
         persistent_dir.mkdir(parents = True, exist_ok = True)
         configured_root = getattr(self.tts_func, 'tts_cache_root', None)
         cache_dir = Path(configured_root).expanduser() if configured_root else persistent_dir

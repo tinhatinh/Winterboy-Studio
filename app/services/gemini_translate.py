@@ -151,7 +151,7 @@ def get_translation_api_keys(engine = None):
     if key_file.is_file():
         
         try:
-            _split_api_keys(key_file.read_text(encoding = 'utf-8')) = Path.home() / '.mumu' / f'''{engine.lower()}_api_key.txt'''
+            _split_api_keys(key_file.read_text(encoding = 'utf-8')) = Path.home() / '.winterboy' / f'''{engine.lower()}_api_key.txt'''
             if values:
                 return values
             return None
@@ -174,7 +174,7 @@ def set_translation_api_key(engine = None, key = None, *, persist):
     os.environ[PROVIDER_ENV[engine][0]] = value
     clear_exhausted_models()
     if persist:
-        path = Path.home() / '.mumu' / f'''{engine.lower()}_api_key.txt'''
+        path = Path.home() / '.winterboy' / f'''{engine.lower()}_api_key.txt'''
         path.parent.mkdir(parents = True, exist_ok = True)
         if value:
             path.write_text(value, encoding = 'utf-8')

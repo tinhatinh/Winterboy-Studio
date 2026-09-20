@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: capcut_tts_engine.pyc (Python 3.12)
 
-__doc__ = 'CapCut cloud TTS + STT engine for Mumu Studio.\n\nWraps ``capcut_common_task_client`` (from capcut-tts-api):\n\nTTS:\n  1. POST /lv/v1/common_task/new   (sami_text_to_speech)\n  2. POST /lv/v1/common_task/query until succeed/failed\n  3. Extract audio URL or base64 → local MP3/WAV\n\nSTT (alongside Whisper / ElevenLabs — does not replace them):\n  1. Extract audio → upload VOD (upload_sign + Apply/CommitUploadInner)\n  2. POST common_task/new (cc_audio_subtitle_asr)\n  3. Poll query → utterances → SRT\n\nVoice catalog ships as ``capcut_voices.json`` (from CapCut Voice.json).\n\nDevice/session overrides live in ``~/.mumu/capcut_device.json`` so secrets\nstay out of last_config / shared presets.  Without a valid device profile\nCapCut may return ``shark block only`` (anti-bot).\n'
+__doc__ = 'CapCut cloud TTS + STT engine for Winterboy Studio.\n\nWraps ``capcut_common_task_client`` (from capcut-tts-api):\n\nTTS:\n  1. POST /lv/v1/common_task/new   (sami_text_to_speech)\n  2. POST /lv/v1/common_task/query until succeed/failed\n  3. Extract audio URL or base64 → local MP3/WAV\n\nSTT (alongside Whisper / ElevenLabs — does not replace them):\n  1. Extract audio → upload VOD (upload_sign + Apply/CommitUploadInner)\n  2. POST common_task/new (cc_audio_subtitle_asr)\n  3. Poll query → utterances → SRT\n\nVoice catalog ships as ``capcut_voices.json`` (from CapCut Voice.json).\n\nDevice/session overrides live in ``~/.winterboy/capcut_device.json`` so secrets\nstay out of last_config / shared presets.  Without a valid device profile\nCapCut may return ``shark block only`` (anti-bot).\n'
 from __future__ import annotations
 import base64
 import json
@@ -18,9 +18,9 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 _SERVICE_DIR = Path(__file__).resolve().parent
 _VOICES_PATH = _SERVICE_DIR / 'capcut_voices.json'
-_DEVICE_PATH = Path.home() / '.mumu' / 'capcut_device.json'
-_DEVICE_SOURCE_PATH = Path.home() / '.mumu' / 'capcut_device_source.json'
-CAPCUT_TTS_CACHE_ROOT = Path.home() / '.mumu' / 'tts_cache' / 'capcut'
+_DEVICE_PATH = Path.home() / '.winterboy' / 'capcut_device.json'
+_DEVICE_SOURCE_PATH = Path.home() / '.winterboy' / 'capcut_device_source.json'
+CAPCUT_TTS_CACHE_ROOT = Path.home() / '.winterboy' / 'tts_cache' / 'capcut'
 _device_cache_lock = threading.RLock()
 _device_cache_stamp: 'tuple[Any, ...] | None' = None
 _device_cache_value: 'dict[str, Any] | None' = None

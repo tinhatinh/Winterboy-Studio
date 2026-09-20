@@ -2,7 +2,7 @@
 # File: main.pyc (Python 3.12)
 
 '''
-Điểm khởi chạy chính của Mumu Studio.
+Điểm khởi chạy chính của Winterboy Studio.
 Chạy:
     python main.py
 '''
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if getattr(sys, 'frozen', False):
-    os.environ['MUMU_PROJECT_ROOT'] = str(Path(sys.executable).resolve().parent)
+    os.environ['WINTERBOY_PROJECT_ROOT'] = str(Path(sys.executable).resolve().parent)
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 os.environ.setdefault('HF_HUB_DISABLE_PROGRESS_BARS', '1')
 os.environ.setdefault('TQDM_DISABLE', '1')
@@ -119,7 +119,7 @@ def _set_windows_app_id():
     
     try:
         import ctypes
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('MumuStudio.AutoRender.1.0')
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('WinterboyStudio.AutoRender.1.0')
         return None
     except Exception:
         return None
@@ -142,9 +142,9 @@ def main():
     _set_windows_app_id()
     setup_logging()
     if _activate_existing_instance():
-        logging.getLogger(__name__).info('Mumu Studio Pro đã đang chạy. Đã kích hoạt cửa sổ hiện tại.')
+        logging.getLogger(__name__).info('Winterboy Studio Pro đã đang chạy. Đã kích hoạt cửa sổ hiện tại.')
         return 0
-    logging.getLogger(__name__).info('Khởi động Mumu Studio (CustomTkinter Engine)...')
+    logging.getLogger(__name__).info('Khởi động Winterboy Studio (CustomTkinter Engine)...')
     
     try:
         from app.config.theme import apply_global_theme

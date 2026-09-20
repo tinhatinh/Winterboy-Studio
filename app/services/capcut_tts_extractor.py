@@ -9,7 +9,7 @@ Dịch vụ này tự động:
 1. Xác định project CapCut mới nhất (hoặc theo thư mục chỉ định).
 2. Phân tích draft_content.json, bóc tách các file audio và vị trí timeline tương ứng.
 3. Sử dụng FFmpeg ghép các đoạn audio theo đúng timeline của phụ đề thành 1 file master hoàn chỉnh.
-4. Trả về đường dẫn file audio thành phẩm để Mumu Studio Pro nạp vào luồng render.
+4. Trả về đường dẫn file audio thành phẩm để Winterboy Studio Pro nạp vào luồng render.
 """
 from __future__ import annotations
 import json

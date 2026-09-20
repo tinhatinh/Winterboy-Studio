@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: story_ass_service.pyc (Python 3.12)
 
-'''Dịch vụ sinh file phụ đề ASS (Advanced SubStation Alpha) chuyên biệt cho Mumu Studio Pro.
+'''Dịch vụ sinh file phụ đề ASS (Advanced SubStation Alpha) chuyên biệt cho Winterboy Studio Pro.
 
 Hỗ trợ:
 - Phụ đề động TikTok (Word-by-word Karaoke bounce pop): Từng từ nảy to 120% rồi thu về 100% kèm màu Neon.

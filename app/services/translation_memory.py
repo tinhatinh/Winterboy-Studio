@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Mapping
 logger = logging.getLogger(__name__)
-MUMU_HOME = Path.home() / '.mumu'
+MUMU_HOME = Path.home() / '.winterboy'
 TRANSLATION_CACHE_ROOT = MUMU_HOME / 'translation_cache'
 TRANSLATION_MEMORY_PATH = TRANSLATION_CACHE_ROOT / 'memory.json'
 GLOSSARY_PATH = MUMU_HOME / 'translation_glossary.json'

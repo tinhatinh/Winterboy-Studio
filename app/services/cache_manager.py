@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: cache_manager.pyc (Python 3.12)
 
-'''Thống kê và dọn dữ liệu tạm do Mumu Studio quản lý.
+'''Thống kê và dọn dữ liệu tạm do Winterboy Studio quản lý.
 
 Chỉ những thư mục được liệt kê rõ trong :func:`managed_locations` mới được
 đụng tới. Video thành phẩm, cấu hình, device và log không thuộc phạm vi này.
@@ -22,7 +22,7 @@ CacheLocation = <NODE:12>()
 def managed_locations():
     '''Danh sách đóng các vùng cache/job mà nút dọn dẹp được phép xóa.'''
     system_temp = Path(tempfile.gettempdir())
-    return (CacheLocation('tts', 'TTS', system_temp / 'mumu_tts_cache'), CacheLocation('tts_capcut', 'TTS CapCut (MP3 + thời lượng)', Path.home() / '.mumu' / 'tts_cache' / 'capcut'), CacheLocation('tts_artifacts', 'Artifact TTS', system_temp / 'mumu_tts_artifacts'), CacheLocation('resume', 'Resume', system_temp / 'mumu_tts_resume'), CacheLocation('demucs', 'Demucs', system_temp / 'mumu_demucs_cache'), CacheLocation('visual', 'Video nền', system_temp / 'mumu_ffmpeg_visual_cache'), CacheLocation('preview', 'Preview', system_temp / 'mumu_preview_audio'), CacheLocation('tts_voice_preview', 'Nghe thử giọng', TTS_PREVIEW_CACHE_ROOT), CacheLocation('translation', 'Bộ nhớ dịch', TRANSLATION_CACHE_ROOT), CacheLocation('legacy', 'Temp cũ', APP_ROOT / 'temp'), CacheLocation('jobs', 'Job cũ', JOBS_ROOT), CacheLocation('story_cache', 'Cache Story', STORY_PROJECTS_ROOT), CacheLocation('story_projects', 'Project Story', STORY_PROJECTS_ROOT))
+    return (CacheLocation('tts', 'TTS', system_temp / 'mumu_tts_cache'), CacheLocation('tts_capcut', 'TTS CapCut (MP3 + thời lượng)', Path.home() / '.winterboy' / 'tts_cache' / 'capcut'), CacheLocation('tts_artifacts', 'Artifact TTS', system_temp / 'mumu_tts_artifacts'), CacheLocation('resume', 'Resume', system_temp / 'mumu_tts_resume'), CacheLocation('demucs', 'Demucs', system_temp / 'mumu_demucs_cache'), CacheLocation('visual', 'Video nền', system_temp / 'mumu_ffmpeg_visual_cache'), CacheLocation('preview', 'Preview', system_temp / 'mumu_preview_audio'), CacheLocation('tts_voice_preview', 'Nghe thử giọng', TTS_PREVIEW_CACHE_ROOT), CacheLocation('translation', 'Bộ nhớ dịch', TRANSLATION_CACHE_ROOT), CacheLocation('legacy', 'Temp cũ', APP_ROOT / 'temp'), CacheLocation('jobs', 'Job cũ', JOBS_ROOT), CacheLocation('story_cache', 'Cache Story', STORY_PROJECTS_ROOT), CacheLocation('story_projects', 'Project Story', STORY_PROJECTS_ROOT))
 
 
 def safe_cache_locations():

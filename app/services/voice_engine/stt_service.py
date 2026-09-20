@@ -4,7 +4,7 @@
 '''
 stt_service — Dịch vụ trích xuất âm thanh từ Video và nhận dạng tiếng nói (Speech-to-Text).
 
-Học hỏi kiến trúc từ whisper_stt.py và cloud_voice.py của Mumu Studio:
+Học hỏi kiến trúc từ whisper_stt.py và cloud_voice.py của Winterboy Studio:
 1. Trích xuất âm thanh từ Video (MP4, MKV, MOV, AVI, WEBM,...) bằng FFmpeg:
    Chuyển thành 16kHz Mono PCM WAV nhỏ gọn, tối ưu dung lượng tải lên.
 2. Tích hợp trực tiếp ElevenLabs Scribe v2 (POST /v1/speech-to-text):

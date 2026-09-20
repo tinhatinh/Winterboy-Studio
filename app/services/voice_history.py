@@ -32,7 +32,7 @@ AUDIO_SUFFIXES = {
     '.ogg',
     '.wav',
     '.flac'}
-STORE_PATH = Path.home() / '.mumu' / 'voice_history.json'
+STORE_PATH = Path.home() / '.winterboy' / 'voice_history.json'
 MAX_EXTERNAL = 12
 _JOB_RE = re.compile('^(\\d{8})_(\\d{6})_([a-z]+)_(.*)$')
 _HASH_TAIL = re.compile('_[0-9a-f]{7}$')

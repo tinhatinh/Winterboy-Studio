@@ -5,7 +5,7 @@
 Modular Voice AI Plugin Architecture — Kiến trúc Plugin mở rộng cho Voice & TTS.
 
 Cho phép dễ dàng tích hợp thêm các nhà cung cấp AI mới (OpenAI TTS, Vbee, FPT AI, Suno, v.v.)
-vào Mumu Studio Pro mà không cần sửa đổi mã nguồn lõi.
+vào Winterboy Studio Pro mà không cần sửa đổi mã nguồn lõi.
 '''
 from __future__ import annotations
 import importlib.util as importlib

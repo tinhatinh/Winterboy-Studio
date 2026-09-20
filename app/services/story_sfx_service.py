@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: story_sfx_service.pyc (Python 3.12)
 
-'''Dịch vụ quản lý và chèn âm thanh hiệu ứng SFX & Foleys theo ngữ cảnh (Auto-SFX Engine) cho Mumu Studio Pro.
+'''Dịch vụ quản lý và chèn âm thanh hiệu ứng SFX & Foleys theo ngữ cảnh (Auto-SFX Engine) cho Winterboy Studio Pro.
 
 Hỗ trợ:
 - Thư viện âm thanh offline tích hợp sẵn (libraries/sfx/)
@@ -48,7 +48,7 @@ def get_custom_sfx_dir():
     if not readme.is_file():
         
         try:
-            readme.write_text('THƯ MỤC CHỨA ÂM THANH HIỆU ỨNG (SFX) TỰ THÊM CỦA BẠN\n---------------------------------------------------\nBạn có thể copy/paste bất kỳ file âm thanh nào (.mp3, .wav, .m4a, .ogg, .aac, .flac) vào thư mục này.\nPhần mềm Mumu Studio Pro sẽ tự động nhận diện và hiển thị trong danh sách chọn SFX của từng phân cảnh.\n', encoding = 'utf-8')
+            readme.write_text('THƯ MỤC CHỨA ÂM THANH HIỆU ỨNG (SFX) TỰ THÊM CỦA BẠN\n---------------------------------------------------\nBạn có thể copy/paste bất kỳ file âm thanh nào (.mp3, .wav, .m4a, .ogg, .aac, .flac) vào thư mục này.\nPhần mềm Winterboy Studio Pro sẽ tự động nhận diện và hiển thị trong danh sách chọn SFX của từng phân cảnh.\n', encoding = 'utf-8')
             return custom_dir
             return custom_dir
         except Exception:

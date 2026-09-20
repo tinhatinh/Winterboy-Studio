@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _CAPCUT_FIX_ASSET_DIR = Path(__file__).resolve().parents[1] / 'resources' / 'capcut_fix'
 
 def bundled_capcut_fix_paths():
-    '''Return the recovery BAT and Device JSON shipped with Mumu Studio.'''
+    '''Return the recovery BAT and Device JSON shipped with Winterboy Studio.'''
     return (_CAPCUT_FIX_ASSET_DIR / 'fix_shark.bat', _CAPCUT_FIX_ASSET_DIR / 'device.json')
 
 from app.services.job_workspace import DEFAULT_VIDEO_OUTPUT
@@ -38,8 +38,8 @@ def g_safe(v = None):
 
 def default_config_path():
     '''File cấu hình mặc định (tự load khi mở app).'''
-    if os.environ.get('MUMU_PROJECT_ROOT'):
-        root = Path(os.environ['MUMU_PROJECT_ROOT']).resolve()
+    if os.environ.get('WINTERBOY_PROJECT_ROOT'):
+        root = Path(os.environ['WINTERBOY_PROJECT_ROOT']).resolve()
     elif getattr(sys, 'frozen', False):
         root = Path(sys.executable).resolve().parent
     else:

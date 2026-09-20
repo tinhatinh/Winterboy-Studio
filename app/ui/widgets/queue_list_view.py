@@ -2,7 +2,7 @@
 # File: queue_list_view.pyc (Python 3.12)
 
 '''
-ModernQueueView — Giao diện hàng đợi render siêu gọn nhẹ cho Mumu Studio Pro.
+ModernQueueView — Giao diện hàng đợi render siêu gọn nhẹ cho Winterboy Studio Pro.
 
 Đặc điểm:
 - Kích thước siêu gọn (chiều cao cố định ~32px), tiết kiệm diện tích tối đa.

@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Callable
 import numpy as np
 logger = logging.getLogger(__name__)
-CACHE_DIR = Path.home() / '.mumu' / 'cache' / 'waveforms'
+CACHE_DIR = Path.home() / '.winterboy' / 'cache' / 'waveforms'
 WaveformData = <NODE:12>()
 
 def _get_cache_path(media_path = None, n_buckets = None):

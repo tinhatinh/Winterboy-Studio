@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: cloud_voice.pyc (Python 3.12)
 
-'''Cloud voice providers used by Mumu Studio.
+'''Cloud voice providers used by Winterboy Studio.
 
 Providers are independent:
   - Edge TTS  → free Microsoft voices (edge_tts_engine.py)
@@ -9,7 +9,7 @@ Providers are independent:
   - ElevenLabs → REST binary TTS + Scribe STT (this module)
   - Google Cloud TTS → official Google client, including Chirp3-HD voices
 
-Keys live outside render configs in ``~/.mumu``.  This keeps API secrets out of
+Keys live outside render configs in ``~/.winterboy``.  This keeps API secrets out of
 ``last_config.json`` and shared project presets.
 '''
 from __future__ import annotations
@@ -42,7 +42,7 @@ ELEVEN_STT_MODEL_ID = 'scribe_v2'
 ELEVEN_OUTPUT_FORMAT = 'mp3_44100_128'
 
 def _secret_path(name = None):
-    return Path.home() / '.mumu' / f'''{name}.txt'''
+    return Path.home() / '.winterboy' / f'''{name}.txt'''
 
 
 def get_secret(name = None, env_name = None):
@@ -153,7 +153,7 @@ def get_google_tts_credentials_path():
     '''Return a service-account JSON path without ever reading/storing its key.
 
     ``GOOGLE_APPLICATION_CREDENTIALS`` remains supported for deployments.  The
-    desktop setting is only a local path in ``~/.mumu`` so render configs and
+    desktop setting is only a local path in ``~/.winterboy`` so render configs and
     job folders cannot accidentally leak a Google private key.
     '''
     return get_secret('google_tts_credentials_path', 'GOOGLE_APPLICATION_CREDENTIALS')

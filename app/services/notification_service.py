@@ -5,7 +5,7 @@
 
 Các tính năng:
 - Đồng bộ thông báo mới từ bảng Supabase app_notifications.
-- Lưu bộ đệm cục bộ 10 thông báo gần nhất (~/.mumu/notifications_cache.json).
+- Lưu bộ đệm cục bộ 10 thông báo gần nhất (~/.winterboy/notifications_cache.json).
 - Kiểm soát quy tắc: Chỉ hiển thị modal tự động 1 LẦN DUY NHẤT trong ngày khi khởi động app.
 - Hỗ trợ Tagline màu đỏ quan trọng cho các bản cập nhật để người dùng biết tải file mới cài đè lên.
 '''
@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 from app.services.license_service import get_supabase_config
 logger = logging.getLogger('app.services.notification_service')
-NOTIFICATION_CACHE_DIR = Path.home() / '.mumu'
+NOTIFICATION_CACHE_DIR = Path.home() / '.winterboy'
 NOTIFICATION_CACHE_FILE = NOTIFICATION_CACHE_DIR / 'notifications_cache.json'
 NOTIFICATION_STATE_FILE = NOTIFICATION_CACHE_DIR / 'notification_state.json'
 DEFAULT_DOWNLOAD_URL = 'https://mumu-studio-pro-o1xc.vercel.app/'

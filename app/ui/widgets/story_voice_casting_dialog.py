@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: story_voice_casting_dialog.pyc (Python 3.12)
 
-'''Hộp thoại Bảng Phân Vai Nhân Vật (Multi-Character Voice Casting Modal) cho Mumu Studio Pro.
+'''Hộp thoại Bảng Phân Vai Nhân Vật (Multi-Character Voice Casting Modal) cho Winterboy Studio Pro.
 
 Cho phép người dùng:
 - Xem toàn bộ nhân vật / vai diễn có trong kịch bản và số lượng phân cảnh tương ứng.

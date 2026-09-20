@@ -403,7 +403,7 @@ def build_youtube_web_gemini_prompt(youtube_url = None, *, target_length, tone_s
 
 
 def parse_youtube_web_gemini_response(raw_text = None):
-    '''Phân tích văn bản hoặc JSON copy từ Gemini Web thành cấu trúc kịch bản Mumu Studio.'''
+    '''Phân tích văn bản hoặc JSON copy từ Gemini Web thành cấu trúc kịch bản Winterboy Studio.'''
     pass
 # WARNING: Decompyle incomplete
 

@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: log_cleaner.pyc (Python 3.12)
 
-'''Xóa log + temp của Auto Render / Mumu Studio.'''
+'''Xóa log + temp của Auto Render / Winterboy Studio.'''
 from __future__ import annotations
 import logging
 import shutil

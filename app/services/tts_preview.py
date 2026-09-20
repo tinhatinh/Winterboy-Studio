@@ -7,7 +7,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-PREVIEW_TEXT = 'Xin chào các bạn. Đây là giọng đọc mẫu trong Mumu Studio.'
-TTS_PREVIEW_CACHE_ROOT = Path.home() / '.mumu' / 'tts_voice_preview'
+PREVIEW_TEXT = 'Xin chào các bạn. Đây là giọng đọc mẫu trong Winterboy Studio.'
+TTS_PREVIEW_CACHE_ROOT = Path.home() / '.winterboy' / 'tts_voice_preview'
 BUNDLED_TTS_PREVIEW_ROOT = Path(__file__).resolve().parents[1] / 'assets' / 'tts_samples'
 # WARNING: Decompyle incomplete

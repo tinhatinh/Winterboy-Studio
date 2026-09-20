@@ -1,7 +1,7 @@
 # Source Generated with Decompyle++
 # File: settings_dialog.pyc (Python 3.12)
 
-'''Hộp thoại Cài đặt toàn diện — Mumu Studio Pro.
+'''Hộp thoại Cài đặt toàn diện — Winterboy Studio Pro.
 
 Tách từ MainWindow để giữ code gọn gàng, tăng tốc độ nạp file và dễ bảo trì.
 '''
