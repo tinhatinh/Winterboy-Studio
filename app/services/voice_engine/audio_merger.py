@@ -1,10 +1,7 @@
-# Source Generated with Decompyle++
-# File: audio_merger.pyc (Python 3.12)
-
 '''
 AudioSyncMerger — Bộ công cụ đồng bộ và gộp âm thanh theo Timeline SRT.
 
-Học hỏi kiến trúc từ AudioSyncEngine của Winterboy Studio:
+Học hỏi kiến trúc từ AudioSyncEngine của Winterboy studio:
 1. Mỗi câu thoại trong SRT có mốc [start_s, end_s] -> D_sub = end_s - start_s.
 2. Đo độ dài thực tế D_voice của file MP3 được ElevenLabs tạo ra.
 3. Nếu D_voice > D_sub:
@@ -26,42 +23,40 @@ from typing import Callable, Optional
 from app.services.voice_engine.file_handler import parse_timestamp_to_seconds
 logger = logging.getLogger(__name__)
 
-def find_ffmpeg_bin():
+def find_ffmpeg_bin() -> str:
     ff = shutil.which('ffmpeg')
     if ff:
         return ff
     common_paths = [
-        None.path.expandvars('%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\ffmpeg.exe'),
+        os.path.expandvars('%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\ffmpeg.exe'),
         'C:\\ffmpeg\\bin\\ffmpeg.exe']
     for p in common_paths:
         if not os.path.isfile(p):
             continue
-        
-        return common_paths, p
+        return p
     raise FileNotFoundError('Không tìm thấy ffmpeg trong hệ thống. Vui lòng cài đặt FFmpeg.')
 
 
-def find_ffprobe_bin():
+def find_ffprobe_bin() -> str:
     ffp = shutil.which('ffprobe')
     if ffp:
         return ffp
-    ff = None.which('ffmpeg')
+    ff = shutil.which('ffmpeg')
     if ff:
         cand = os.path.join(os.path.dirname(ff), 'ffprobe.exe')
         if os.path.isfile(cand):
             return cand
         common_paths = [
-            None.path.expandvars('%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\ffprobe.exe'),
+            os.path.expandvars('%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\ffprobe.exe'),
             'C:\\ffmpeg\\bin\\ffprobe.exe']
         for p in common_paths:
             if not os.path.isfile(p):
                 continue
-            
-            return common_paths, p
-        raise FileNotFoundError('Không tìm thấy ffprobe trong hệ thống.')
+            return p
+    raise FileNotFoundError('Không tìm thấy ffprobe trong hệ thống.')
 
 
-def probe_audio_duration(file_path = None):
+def probe_audio_duration(file_path: str) -> float:
     '''
     Đo độ dài thực tế của file âm thanh (tính bằng giây) bằng ffprobe.
     '''
@@ -75,32 +70,21 @@ def probe_audio_duration(file_path = None):
         '-of',
         'default=noprint_wrappers=1:nokey=1',
         file_path]
-    
     try:
         p = subprocess.run(cmd, capture_output = True, text = True, encoding = 'utf-8', errors = 'replace', creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         if p.returncode == 0 and p.stdout.strip():
-            return max(0, float(p.stdout.strip()))
-        
-        try:
-            AudioSegment = AudioSegment
-            import pydub
-            seg = AudioSegment.from_file(file_path)
-            return len(seg) / 1000
-            except Exception:
-                e = None
-                logger.warning('ffprobe error on %s: %s', file_path, e)
-                e = None
-                del e
-                continue
-                e = None
-                del e
-        except Exception:
-            return 0
+            return max(0.0, float(p.stdout.strip()))
+    except Exception as e:
+        logger.warning('ffprobe error on %s: %s', file_path, e)
+    try:
+        from pydub import AudioSegment
+        seg = AudioSegment.from_file(file_path)
+        return len(seg) / 1000.0
+    except Exception:
+        return 0.0
 
 
-
-
-def build_atempo_filters(speed_rate = None):
+def build_atempo_filters(speed_rate: float) -> str:
     '''
     Tạo chuỗi filter atempo cho FFmpeg.
     FFmpeg chỉ chấp nhận giá trị trong khoảng [0.5, 2.0] cho mỗi bộ lọc atempo đơn lẻ.
@@ -110,43 +94,35 @@ def build_atempo_filters(speed_rate = None):
         return 'atempo=1.0'
     factors = []
     r = float(speed_rate)
-    if r > 2:
-        factors.append(2)
-        r /= 2
-        if r > 2:
-            continue
-    if r < 0.5:
+    while r > 2.0:
+        factors.append(2.0)
+        r /= 2.0
+    while r < 0.5:
         factors.append(0.5)
         r /= 0.5
-        if r < 0.5:
-            continue
-    factors.append(max(0.5, min(2, r)))
-    return (lambda .0: pass# WARNING: Decompyle incomplete
-)(factors())
+    factors.append(max(0.5, min(2.0, r)))
+    return ','.join(f'''atempo={f:.6f}''' for f in factors)
 
 
 class AudioSyncMerger:
-    
-    def __init__(self = None, sample_rate = None, max_speed_rate = None, min_segment_s = (44100, 1.85, 0.1)):
+
+    def __init__(self, sample_rate: int = 44100, max_speed_rate: float = 1.85,
+                 min_segment_s: float = 0.1):
         self.sample_rate = sample_rate
         self.max_speed_rate = max_speed_rate
         self.min_segment_s = min_segment_s
         self.ffmpeg = find_ffmpeg_bin()
         self.ffprobe = find_ffprobe_bin()
 
-    
-    def _run_cmd(self = None, cmd = None):
+
+    def _run_cmd(self, cmd: list[str]) -> None:
         p = subprocess.run(cmd, capture_output = True, text = True, encoding = 'utf-8', errors = 'replace', creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         if p.returncode != 0:
-            if not p.stderr:
-                p.stderr
-                if not p.stdout:
-                    p.stdout
-            err = ''[-600:]
+            err = (p.stderr or p.stdout or '')[-600:]
             raise RuntimeError(f'''FFmpeg error ({p.returncode}): {err}''')
 
-    
-    def make_silence(self = None, output_path = None, duration_s = None):
+
+    def make_silence(self, output_path: str, duration_s: float) -> str:
         '''
         Tạo file âm thanh khoảng lặng (silence) chuẩn sample rate với độ dài duration_s.
         '''
@@ -165,15 +141,15 @@ class AudioSyncMerger:
         self._run_cmd(cmd)
         return output_path
 
-    
-    def fit_segment(self = None, src_path = None, dst_path = None, target_duration = ('src_path', str, 'dst_path', str, 'target_duration', float, 'return', float)):
+
+    def fit_segment(self, src_path: str, dst_path: str, target_duration: float) -> float:
         '''
         Khớp file âm thanh với khung thời lượng target_duration:
         - Nếu dài hơn: Tự động atempo để câu nói kịp kết thúc trước mốc tiếp theo.
         - Nếu ngắn hơn: Chèn silence ở đuôi (apad).
         '''
         d_voice = probe_audio_duration(src_path)
-        if d_voice <= 0:
+        if d_voice <= 0.0:
             d_voice = target_duration
         target_dur = max(self.min_segment_s, target_duration)
         eps = 0.03
@@ -197,7 +173,7 @@ class AudioSyncMerger:
             self._run_cmd(cmd)
             return target_dur
         cmd = [
-            None.ffmpeg,
+            self.ffmpeg,
             '-y',
             '-i',
             src_path,
@@ -211,10 +187,10 @@ class AudioSyncMerger:
         self._run_cmd(cmd)
         return target_dur
 
-    
-    def merge_voice_with_srt(self = None, entries = None, audio_files = None, output_path = (None,), progress_cb = ('entries', list[dict], 'audio_files', list[Optional[str]], 'output_path', str, 'progress_cb', Optional[Callable[([
-        float,
-        str], None)]], 'return', dict)):
+
+    def merge_voice_with_srt(self, entries: list[dict], audio_files: list[Optional[str]],
+                             output_path: str,
+                             progress_cb: Optional[Callable[[float, str], None]] = None) -> dict:
         '''
         Gộp toàn bộ các đoạn voice thành một file master duy nhất, căn chỉnh timeline khớp 100% SRT.
 
@@ -224,17 +200,7 @@ class AudioSyncMerger:
         - output_path: Đường dẫn file MP3 đầu ra hoàn chỉnh.
         - progress_cb: Hàm callback(tiến_độ_0_đến_1, thông_báo) để cập nhật UI.
         '''
-        if not entries:
-            raise ValueError('Danh sách phụ đề trống.')
-        if len(entries) != len(audio_files):
-            raise ValueError(f'''Số lượng câu ({len(entries)}) không khớp số lượng file audio ({len(audio_files)}).''')
-        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok = True)
-        temp_dir = tempfile.TemporaryDirectory(prefix = 'mumu_sync_')
-        temp_path = temp_dir
-        timeline_pieces = []
-        cursor = 0
-        total_items = len(entries)
-        valid_items = []
-    # WARNING: Decompyle incomplete
-
-
+        # Decompyle++ dừng ở dòng 226 (thân khối `with tempfile.TemporaryDirectory(...)`)
+        # nên toàn bộ phần lắp timeline + concat FFmpeg mất theo. Khung đầu vào đã xác minh
+        # được từ bytecode nhưng dựng lại phần còn lại là đoán -> để nguyên stub.
+        raise NotImplementedError('chưa khôi phục từ bytecode: app.services.voice_engine.audio_merger.merge_voice_with_srt')

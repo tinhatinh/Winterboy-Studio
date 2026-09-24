@@ -1,6 +1,3 @@
-# Source Generated with Decompyle++
-# File: vi_normalizer.pyc (Python 3.12)
-
 '''Vietnamese text normalization for TTS input: rewrites the written forms the
 model was never trained to voice (digits, dates, clock times, version strings,
 fractions, acronyms) into the words a speaker would actually say.
@@ -100,61 +97,62 @@ _OP_WORDS = str.maketrans({
     '/': 'chia',
     '^': 'mũ' })
 
-def _apply_sandhi(text = None):
+def _apply_sandhi(text: str) -> str:
     '''Vietnamese number-pronunciation rules: 15 is "mười lăm" not "mười năm",
     21 "hai mươi mốt" not "hai mươi một", 24 "hai mươi tư", 104 "một trăm linh
     tư".'''
-    return text.replace('mười năm', 'mười lăm').replace('mươi năm', 'mươi lăm').replace('mươi bốn', 'mươi tư').replace('mươi một', 'mươi mốt').replace('linh bốn', 'linh tư')
+    return text.replace('mười năm', 'mười lăm').replace('mươi năm', 'mươi lăm').replace(
+        'mươi bốn', 'mươi tư').replace('mươi một', 'mươi mốt').replace('linh bốn', 'linh tư')
 
 
-def expand_digit(digits = None):
+def expand_digit(digits: str) -> str:
     '''Read a run of characters one symbol at a time ("2024" -> "hai không hai
     bốn"). Used for the decimal tail and as the number fallback.'''
-    return (lambda .0: pass# WARNING: Decompyle incomplete
-)(digits.replace(' ', '')())
+    return ' '.join(_DIGIT.get(c, c) for c in digits.replace(' ', ''))
 
 
-def _split_chunks(number = None):
+def _split_chunks(number: str) -> list[str]:
     """Split a digit string into 3-digit chunks, most significant first, with a
     short leading chunk when the length isn't a multiple of 3."""
-    pass
-# WARNING: Decompyle incomplete
+    chunks = [number[i:i + 3] for i in range(len(number) - 3, -1, -3)][::-1]
+    if len(number) % 3:
+        chunks = [number[:len(number) % 3]] + chunks
+    return chunks
 
 
-def _speak_chunk(chunk = None, scale_index = None):
+def _speak_chunk(chunk: str, scale_index: int) -> str:
     '''One 3-digit chunk plus its scale word ("250" at scale 1 -> "hai trăm năm
     mươi nghìn"). An all-zero chunk is silent.'''
     if chunk == '000':
         return ''
     result = ''
     pos = len(chunk) - 1
-    if pos >= 0:
+    while pos >= 0:
         if pos == len(chunk) - 1 and chunk[pos] == '0' and len(chunk) > 1:
+            # hàng đơn vị = 0: im lặng, chỉ đọc hai hàng cao hơn
             pass
         elif pos == len(chunk) - 2 and chunk[pos] in ('1', '0'):
+            # hàng chục là 1 hoặc 0: "mười x" / "linh x", không "một mươi x"
             if pos == 0 and chunk[pos] == '0':
                 pass
             elif chunk[pos] == '1':
-                result = f'''mười {_DIGIT[chunk[pos + 1]]}''' if chunk[pos + 1] != '0' else 'mười'
-            elif chunk[pos + 1] != '0':
-                pass
-            
-            result = ''
-        elif result:
-            pass
-        
-        result = ' ' + result + ''
+                result = (
+                    f'''mười {_DIGIT[chunk[pos + 1]]}''' if chunk[pos + 1] != '0' else 'mười')
+            else:
+                result = 'linh ' + _DIGIT[chunk[pos + 1]] if chunk[pos + 1] != '0' else ''
+        else:
+            result = (
+                _DIGIT[chunk[pos]] + ' '
+                + _UNIT_SINGLE[len(chunk) - pos - 1]
+                + (' ' + result if result else '')
+            )
         pos -= 1
-        if pos >= 0:
-            continue
     if scale_index >= len(_UNIT_TRIPLE):
         raise IndexError('number is too large to speak')
-    return ' '.join([
-        result.strip(),
-        _UNIT_TRIPLE[scale_index]]).strip()
+    return ' '.join([result.strip(), _UNIT_TRIPLE[scale_index]]).strip()
 
 
-def expand_number(number = None):
+def expand_number(number: str) -> str:
     '''Speak an integer, a decimal, or a small arithmetic expression.
 
     Handles the sign ("-7" -> "trừ bảy"), \'.\' as a thousands separator
@@ -164,57 +162,58 @@ def expand_number(number = None):
     "hai cộng ba"). Leading zeros are dropped; a number too large for the
     scale table falls back to digit-by-digit reading.
     '''
-    
     try:
         sign = ''
         if number[0] in ('-', '+'):
-            sign = {
-                '+': 'cộng',
-                '-': 'trừ' }[number[0]]
+            sign = {'+': 'cộng', '-': 'trừ'}[number[0]]
             number = number[1:]
-        if len(number) > 1 and number[0] == '0' and number[1].isdigit():
+        while len(number) > 1 and number[0] == '0' and number[1].isdigit():
             number = number[1:]
-            if len(number) > 1 and number[0] == '0' and number[1].isdigit():
+        number = number.strip()
+        # Một biểu thức toán ("2+3", "5 * 4"): tách từng số rồi dịch ký tự
+        # toán học bằng _OP_WORDS, đệ quy cho từng toán hạng.
+        matches = re.findall('[-+]?[0-9.,]+', number)
+        if len(matches) > 1 or matches and matches[0] != number:
+            return (
+                re.sub(
+                    '\\s*([-+]?[0-9.,]+)\\s*',
+                    lambda m: f''' {expand_number(m.group(1))} ''',
+                    number,
+                )
+                .strip()
+                .translate(_OP_WORDS))
+        # Một số duy nhất: bỏ mọi ký tự không thuộc bộ số
+        number = re.sub('[^0-9.,]', '', number)
+        decimal_part = ''
+        if number.count(',') == 1:
+            # phẩy thập phân kiểu Việt Nam: "12,5"
+            number = number.replace('.', '')
+            decimal_part = f'''phẩy {expand_digit(number.split(',')[-1])}'''
+            number = ''.join(number.split(',')[:-1])
+        elif number.count('.') == 1 and len(number[number.index('.'):]) <= 3:
+            # dấu chấm thập phân ("3.14"), không phải phân cách hàng nghìn
+            number = number.replace(',', '')
+            decimal_part = f'''chấm {expand_digit(number.split('.')[-1])}'''
+            number = ''.join(number.split('.')[:-1])
+        else:
+            number = number.replace('.', '')
+        chunks = _split_chunks(number)
+        parts = []
+        for i, chunk in enumerate(chunks):
+            spoken = _speak_chunk(chunk, len(chunks) - i - 1)
+            if not spoken:
                 continue
-                
-                try:
-                    number = number.strip()
-                    matches = re.findall('[-+]?[0-9.,]+', number)
-                    if (len(matches) > 1 or matches) and matches[0] != number:
-                        return re.sub('\\s*([-+]?[0-9.,]+)\\s*', (lambda m: f''' {expand_number(m.group(1))} '''), number).strip().translate(_OP_WORDS)
-                    number = None.sub('[^0-9.,]', '', number)
-                    decimal_part = ''
-                    if number.count(',') == 1:
-                        number = number.replace('.', '')
-                        decimal_part = f'''phẩy {expand_digit(number.split(',')[-1])}'''
-                        number = ''.join(number.split(',')[:-1])
-                    elif number.count('.') == 1 and len(number[number.index('.'):]) <= 3:
-                        number = number.replace(',', '')
-                        decimal_part = f'''chấm {expand_digit(number.split('.')[-1])}'''
-                        number = ''.join(number.split('.')[:-1])
-                    else:
-                        number = number.replace('.', '')
-                    chunks = _split_chunks(number)
-                    parts = []
-                    for i, chunk in enumerate(chunks):
-                        spoken = _speak_chunk(chunk, len(chunks) - i - 1)
-                        if not spoken:
-                            continue
-                            
-                            try:
-                                parts.append(spoken)
-                                continue
-                                return f'''{sign} {_apply_sandhi(' '.join(parts))} {decimal_part}'''.strip()
-                            except IndexError:
-                                return 
+            parts.append(spoken)
+        return f'{sign} {_apply_sandhi(" ".join(parts))} {decimal_part}'.strip()
+    except IndexError:
+        # vượt bảng đơn vị (tỷ tỷ) hoặc chuỗi rỗng: đọc từng chữ số
+        return expand_digit(number)
 
 
-
-
-
-def _num(value = None):
+def _num(value: str) -> str:
     '''expand_number for a plain integer group inside a date/time/version.'''
     return expand_number(value)
+
 
 _ROMAN = {
     'I': 'một',
@@ -230,7 +229,7 @@ _ROMAN = {
 _ROMAN_CUES = ('quý', 'thứ', 'khóa', 'kỳ', 'đợt', 'loại', 'chương', 'phần', 'thế kỷ')
 _PREFIX_ABBR = ('TP', 'Q', 'P', 'H', 'TX', 'TT', 'KP')
 
-def spell_letters(letters = None):
+def spell_letters(letters: str) -> str:
     '''Return a letter run as capitals, unchanged: "ab" -> "AB".
 
     Deliberately NOT spaced into single letters, and deliberately NOT a
@@ -242,21 +241,32 @@ def spell_letters(letters = None):
     return letters.upper()
 
 
-def _month(value = None):
+def _month(value: str) -> str:
     '''Month name. The fourth month is "tháng tư", never "tháng bốn" — the one
     place this module knowingly departs from soe-vinorm, which runs months
     through the plain cardinal reader.'''
-    if value.lstrip('0') == '4':
-        return 'tư'
-    return None(value)
+    return 'tư' if value.lstrip('0') == '4' else expand_number(value)
 
-load_abbreviations = (lambda : path = _DATA_DIR / 'abbreviations.txt'table = { }f = open(path, encoding = 'utf-8')for line in f:
-line = line.strip()if line and line.startswith('#') or ':' not in line:
-continue(abbr, readings) = line.split(':', 1)table.setdefault(abbr, []).extend(readings.split(','))None(None, None)tablewith None:
-if not None:
-passtable)()
 
-def _expand_abbreviation(token = None):
+@lru_cache(maxsize=1)
+def load_abbreviations() -> dict[str, list[str]]:
+    '''Parse data/abbreviations.txt ("ABBR:reading[,reading...]" per line) into
+    {abbreviation: [reading, ...]}. Both the uppercase and lowercase spellings
+    of each acronym are keys in the file; only the uppercase ones are ever used
+    (see the module docstring).'''
+    path = _DATA_DIR / 'abbreviations.txt'
+    table = {}
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or ':' not in line:
+                continue
+            abbr, readings = line.split(':', 1)
+            table.setdefault(abbr, []).extend(readings.split(','))
+    return table
+
+
+def _expand_abbreviation(token: str) -> str | None:
     '''Dictionary reading for an uppercase acronym, or None to leave it alone.
 
     Tries the token as written, then with dots stripped ("TP.HCM" -> "TPHCM"),
@@ -265,13 +275,20 @@ def _expand_abbreviation(token = None):
     back None — soe-vinorm would spell them out letter by letter, which this
     module does not do.
     '''
-    pass
-# WARNING: Decompyle incomplete
+    table = load_abbreviations()
+    # thử nguyên văn, rồi bản đã bỏ dấu chấm/gạch nối
+    for key in (token, token.replace('.', '').replace('-', '')):
+        if key in table:
+            return table[key][0]
+    parts = [p for p in re.split('[.\\-]', token) if p]
+    if len(parts) > 1 and all(len(p) >= 2 and p in table for p in parts):
+        return ' '.join(table[p][0] for p in parts)
+    return None
 
 _VN_UPPER = 'A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐĨŨƠƯẠ-Ỹ'
 _VN_LOWER = 'a-zàáâãèéêìíòóôõùúýăđĩũơưạ-ỹ'
 
-def split_camel_case(text = None):
+def split_camel_case(text: str) -> str:
     '''Insert a space at every internal case boundary of a mixed-case token.
 
     Case is tested with ``str.isupper()``/``str.islower()``, NOT a regex letter
@@ -289,24 +306,20 @@ def split_camel_case(text = None):
     '''
     out = []
     for token in re.split('(\\s+)', text):
-        if token or token.isspace():
+        if not token or token.isspace():
             out.append(token)
             continue
-        if not (lambda .0: pass# WARNING: Decompyle incomplete
-)(token()) or (lambda .0: pass# WARNING: Decompyle incomplete
-)(token()):
+        if not any(c.isupper() for c in token) or not any(c.islower() for c in token):
+            # đã toàn chữ in hoa (ATM, GPT): giữ nguyên, không cắt
             out.append(token)
             continue
-        lower_run = 0
-        chars = []
+        chars, lower_run = [], 0
         for i, c in enumerate(token):
             if c.isupper() and i > 0:
                 nxt = token[i + 1] if i + 1 < len(token) else ''
                 run = 0
-                if i + run < len(token) and token[i + run].isupper():
+                while i + run < len(token) and token[i + run].isupper():
                     run += 1
-                    if i + run < len(token) and token[i + run].isupper():
-                        continue
                 if lower_run >= 2 and run >= 2:
                     chars.append(' ')
                 elif token[i - 1].isupper() and nxt.islower():
@@ -322,12 +335,17 @@ _SCANNER = re.compile(f'''\n    # ── time: HH:MM:SS / HHhMMmSS ────�
 _THOUSANDS_RE = re.compile('^\\d{1,3}(?:\\.\\d{3})+$')
 _NUM_TRAIL_RE = re.compile('[.,\\s]+$')
 
-def _speak_time(h = None, m = None, s = None):
+def _speak_time(h: str, m: str | None = None, s: str | None = None) -> str:
     out = f'''{_num(h)} giờ'''
-# WARNING: Decompyle incomplete
+    # phút chỉ đọc khi có giây hoặc bản thân nó khác 0 ("15h" -> "mười lăm giờ")
+    if m is not None and (s is not None or m.strip('0')):
+        out += f''' {_num(m)} phút'''
+    if s is not None:
+        out += f''' {_num(s)} giây'''
+    return out
 
 
-def _replace(match = None):
+def _replace(match: re.Match) -> str:
     '''re.sub callback: expand the match, then keep it a separate word.
 
     A written form can sit flush against a unit or a letter ("1.250.000đ",
@@ -337,22 +355,106 @@ def _replace(match = None):
     expanded = _expand_match(match)
     if expanded == match.group(0):
         return expanded
-    text = None.string
+    text = match.string
     before = text[match.start() - 1] if match.start() else ''
     after = text[match.end():match.end() + 1]
-    if not before.isalnum() and expanded[:1].isspace():
+    if before.isalnum() and not expanded[:1].isspace():
         expanded = ' ' + expanded
-    if not after.isalnum() and expanded[-1:].isspace():
+    if after.isalnum() and not expanded[-1:].isspace():
         expanded = expanded + ' '
     return expanded
 
 
-def _expand_match(match = None):
-    pass
-# WARNING: Decompyle incomplete
+def _expand_match(match: re.Match) -> str:
+    g = match.groupdict()
+    # 15:30:20 / 15h30p20
+    if g['t_h'] is not None:
+        return _speak_time(g['t_h'], g['t_m'], g['t_s'])
+    # 23/8/2024
+    if g['d_d'] is not None:
+        return f'''{_num(g['d_d'])} tháng {_month(g['d_m'])} năm {_num(g['d_y'])}'''
+    # 8/2024 — thêm chữ "tháng" nếu bản gốc không viết
+    if g['my_m'] is not None:
+        before = match.string[max(0, match.start() - 8):match.start()].lower()
+        lead = '' if re.search('tháng\\s*$', before) else 'tháng '
+        return f'''{lead}{_month(g['my_m'])} năm {_num(g['my_y'])}'''
+    # 3/4 chỉ là ngày khi đứng sau một từ chỉ ngày; "và 3/4", "hoặc 3/4" là phân số
+    if g['dm_d'] is not None:
+        if g['dm_cue'].lower() in ('và', 'hoặc'):
+            before = match.string[max(0, match.start() - 40):match.start()].lower()
+            if not re.search(f'''\\b(?:{_DATE_CUES})\\b''', before):
+                return match.group(0)
+        return f'''{g['dm_cue']}{g['dm_gap']}{_num(g['dm_d'])} tháng {_month(g['dm_m'])}'''
+    if g['hm_h'] is not None:
+        return _speak_time(g['hm_h'], g['hm_m'])
+    if g['hg_h'] is not None:
+        return _speak_time(g['hg_h'], g['hg_m'])
+    if g['h_h'] is not None:
+        return _speak_time(g['h_h'])
+    # v1.2 / 1.2.3 — đọc từng nhóm, dấu chấm là "chấm"
+    if g['v_num'] is not None:
+        return g['vp'] + ' ' + ' chấm '.join(_num(p) for p in g['v_num'].split('.'))
+    if g['v_bare'] is not None:
+        raw = g['v_bare']
+        if _THOUSANDS_RE.match(raw):
+            # 1.250.000: nhóm 3 chữ số đều -> số, không phải phiên bản
+            return expand_number(raw)
+        return ' chấm '.join(_num(p) for p in raw.split('.'))
+    if g['f_a'] is not None:
+        return f'''{_num(g['f_a'])} trên {_num(g['f_b'])}'''
+    if g['pct_num'] is not None:
+        return f'''{expand_number(g['pct_num'].rstrip('.,'))} phần trăm'''
+    if g['n_num'] is not None:
+        raw = g['n_num']
+        trail = _NUM_TRAIL_RE.search(raw)
+        suffix = ''
+        if trail and not raw[trail.start():].strip(' ').rstrip('.,'):
+            # phần đuôi chỉ toàn dấu chấm/phẩy/khoảng trắng: giữ lại nguyên văn
+            suffix = raw[trail.start():]
+            raw = raw[:trail.start()]
+        if not raw:
+            return match.group(0)
+        # số định danh quá dài (CMND/CCCD, số dư): đọc từng chữ số, không phải
+        # một đại lượng — nhưng expand_number lo phần chữ số, còn ở đây thì trả
+        # nguyên văn để nhánh letter/number khác không cắt nhầm.
+        if re.fullmatch('[-+]?\\d+', raw) and len(raw.lstrip('-+')) > 8:
+            return match.group(0)
+        # "5G", "4K": số dính ngay ký tự kế tiếp là một mã/đơn vị, không phải số
+        if re.match('^[^\\W\\d_]\\d', match.string[match.end():match.end() + 2]):
+            return match.group(0)
+        return expand_number(raw) + suffix
+    if g['pfx'] is not None:
+        return _expand_abbreviation(g['pfx']) or g['pfx']
+    if g['ap'] is not None:
+        return g['ap']
+    if g['code_a'] is not None:
+        # AB-1234: chữ cái đánh vần, chữ số đọc từng số một
+        return f'''{spell_letters(g['code_a'])} {' '.join(g['code_n'])}'''
+    if g['deg_n'] is not None:
+        unit = {
+            'C': ' xê',
+            'F': ' ép' }.get(g['deg_u'] or '', '')
+        return f'''{expand_number(g['deg_n'])} độ{unit}'''
+    if g['abbr'] is not None:
+        token = g['abbr']
+        if token in _ROMAN:
+            # số La Mã chỉ đọc là quý/thứ... khi đứng ngay sau một từ gợi ý
+            before = match.string[max(0, match.start() - 12):match.start()].lower()
+            if any(re.search(f'''{cue}\\s*$''', before) for cue in _ROMAN_CUES):
+                return _ROMAN[token]
+        expansion = _expand_abbreviation(token)
+        if expansion is not None:
+            # "(ATM)" ngay sau chữ đã giải thích viết tắt: đánh vần, khỏi lặp nghĩa
+            before = match.string[max(0, match.start() - len(expansion) - 4):match.start()]
+            if before.rstrip().endswith('(') and expansion.lower() in before.lower():
+                return spell_letters(token)
+        return expansion or token
+    if g['at'] is not None:
+        return 'a còng'
+    return match.group(0)
 
 
-def normalize_vi_text(text = None):
+def normalize_vi_text(text: str) -> str:
     '''Expand the supported non-standard forms in `text` into spoken Vietnamese.
 
     Punctuation, casing and every unsupported form are preserved verbatim, and
@@ -361,9 +463,9 @@ def normalize_vi_text(text = None):
     text that contains none of these forms at all — it is then a no-op beyond
     Unicode NFC normalization.
     '''
-    if not text or text.strip():
+    if not text or not text.strip():
         return text
-    text = None.normalize('NFC', text)
+    text = unicodedata.normalize('NFC', text)
     out = []
     last = 0
     for protected in _PROTECTED_RE.finditer(text):
@@ -371,13 +473,17 @@ def normalize_vi_text(text = None):
         out.append(protected.group(0))
         last = protected.end()
     out.append(_SCANNER.sub(_replace, split_camel_case(text[last:])))
+    # nhiều nhánh để lại khoảng trắng kép khi chèn chữ ("12,5  %" -> "...  ")
     return re.sub('[ \\t]{2,}', ' ', ''.join(out))
+
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1:
         print(normalize_vi_text(' '.join(sys.argv[1:])))
-        return None
-    for sample in ('Ngày 23/8/2024 lúc 15h30, giá là 1.250.000 đồng, tăng 12,5 điểm.', 'Phiên bản v1.2.3 phát hành tháng 8/2024, còn 3/4 số máy chạy 1.2.3.', 'UBND TP.HCM và ATM của NHNN, gửi mail tới abc@gmail.com nhé.', 'Tính 2+3, rồi 10 - 4, rồi 2^10 và 6 * 7 = 42.'):
-        print(f'''{sample}\n  -> {normalize_vi_text(sample)}\n''')
-    return None
+    else:
+        for sample in ('Ngày 23/8/2024 lúc 15h30, giá là 1.250.000 đồng, tăng 12,5 điểm.',
+                       'Phiên bản v1.2.3 phát hành tháng 8/2024, còn 3/4 số máy chạy 1.2.3.',
+                       'UBND TP.HCM và ATM của NHNN, gửi mail tới abc@gmail.com nhé.',
+                       'Tính 2+3, rồi 10 - 4, rồi 2^10 và 6 * 7 = 42.'):
+            print(f'''{sample}\n  -> {normalize_vi_text(sample)}\n''')

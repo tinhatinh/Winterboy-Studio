@@ -28,7 +28,14 @@ from app.config.theme import ACCENT, ACCENT_HOVER, ACCENT_TEXT, BG_DARK, BG_PANE
 from app.services.voice_history import delete_all_voice_entries, delete_voice_entry, format_duration, humanize_when, load_cached_durations, measure_durations, scan_voices
 logger = logging.getLogger(__name__)
 _ROW_BG = (SURFACE_ALT, SURFACE_ALT_2)
-_RowUI = <NODE:12>()
+@dataclass
+class _RowUI:
+    entry: object
+    frame: tk.Frame
+    bar: tk.Frame
+    widgets: list = field(default_factory=list)
+    meta: tk.Label | None = None
+    play: ctk.CTkButton | None = None
 
 class VoiceHistoryDialog(ctk.CTkToplevel):
     pass

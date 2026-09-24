@@ -56,23 +56,21 @@ def get_music_library_dirs():
     
     try:
         primary_dir.mkdir(parents = True, exist_ok = True)
-        existing_dirs = []
-        seen = set()
-        for d in base_dirs:
+    except Exception:
+        pass
+    existing_dirs = []
+    seen = set()
+    for d in base_dirs:
+        
+        try:
             if d.is_dir():
                 resolved = str(d.resolve()).lower()
                 if resolved not in seen:
                     seen.add(resolved)
                     existing_dirs.append(d)
-        continue
-        if not existing_dirs:
-            existing_dirs
-        return [
-            primary_dir]
-    except Exception:
-        continue
         except Exception:
             continue
+    return existing_dirs or [primary_dir]
 
 
 

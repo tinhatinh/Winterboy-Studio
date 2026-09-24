@@ -35,8 +35,9 @@ def get_sfx_root_dir():
         if not any(c.glob('*.wav')):
             continue
         
-        return candidates, c
-    root / 'libraries' / 'sfx' = Path(__file__).resolve().parents[2]
+        return c
+    root = Path(__file__).resolve().parents[2]
+    sfx_dir = root / 'libraries' / 'sfx'
     sfx_dir.mkdir(parents = True, exist_ok = True)
     return sfx_dir
 
@@ -141,18 +142,12 @@ def open_custom_sfx_folder():
         if os.name == 'nt':
             os.startfile(str(custom_dir))
             return custom_dir
-        None.run([
+        subprocess.run([
             'xdg-open',
             str(custom_dir)])
-        return custom_dir
-    except Exception:
-        exc = None
+    except Exception as exc:
         logger.warning('Không thể mở thư mục SFX: %s', exc)
-        exc = None
-        del exc
-        return custom_dir
-        exc = None
-        del exc
+    return custom_dir
 
 
 SFX_KEYWORD_RULES: 'list[dict[str, Any]]' = [
@@ -311,11 +306,7 @@ def detect_sfx_for_text(text = None, visual_hint = None):
     Chỉ kích hoạt khi có từ khóa hành động cụ thể rõ rệt (score >= 3).
     Trả về: (sfx_path, sfx_volume, sfx_offset_s).
     '''
-    if not text:
-        text
-    if not visual_hint:
-        visual_hint
-    combined = f'''{''} {''}'''.lower()
+    combined = f'''{text or ''} {visual_hint or ''}'''.lower()
     if not combined.strip():
         return ('', 0.2, 0)
     sfx_dir = get_sfx_root_dir()
@@ -338,6 +329,7 @@ def detect_sfx_for_text(text = None, visual_hint = None):
         target_file = sfx_dir / best_match['file']
         if target_file.is_file():
             return (str(target_file.resolve()), float(best_match.get('volume', 0.2)), float(best_match.get('offset', 0)))
+    return ('', 0.2, 0)
 
 
 def assign_auto_sfx_to_scenes(scenes = None, overwrite_existing = None, min_gap = None):

@@ -1,6 +1,3 @@
-# Source Generated with Decompyle++
-# File: codec.pyc (Python 3.12)
-
 '''onnxruntime-only MOSS-Audio-Tokenizer-Nano **decoder** — codes -> waveform.
 
 Vendored, not downloaded. The decoder graphs ship inside the ZeroTTS weights
@@ -16,7 +13,7 @@ Conventions worth knowing before touching this:
   * native sample rate 48 kHz; the codec is stereo internally, the public
     interface is mono (decode averages the two channels).
   * this export uses (batch, T, K) — TIME-major, codebook-LAST — for
-    ``audio_codes``. ZeroTTS\'s AR loop produces (B, K, T), so decode transposes.
+    ``audio_codes``. ZeroTTS's AR loop produces (B, K, T), so decode transposes.
   * every integer tensor here is **int32**, not int64. This is verified against
     the graphs; do not "fix" it to int64 out of PyTorch habit.
 
@@ -35,71 +32,119 @@ class MossCodecDecoder:
         providers: onnxruntime execution providers.
         intra_op_num_threads: per-session thread count.
     '''
-    
-    def __init__(self = None, codec_dir = None, providers = None, intra_op_num_threads = (None, 4)):
-        pass
-    # WARNING: Decompyle incomplete
+    # onnxruntime import bên trong __init__ để module này import được trên máy
+    # chưa cài (CLI --help không cần model).
 
-    
-    def decode(self = None, codes_bkt = None):
+    def __init__(self,
+                 codec_dir: str | Path,
+                 providers: list[str] | None = None,
+                 intra_op_num_threads: int = 4):
+
+        import onnxruntime as ort
+
+        codec_dir = Path(codec_dir)
+        meta_path = codec_dir / 'codec_browser_onnx_meta.json'
+        if not meta_path.exists():
+            raise FileNotFoundError(
+                f'{codec_dir} has no codec_browser_onnx_meta.json — the vendored '
+                'codec is missing from this model directory.')
+        meta = json.loads(meta_path.read_text())
+        self._meta = meta
+
+        cfg = meta['codec_config']
+        self.sample_rate = int(cfg['sample_rate'])
+        self.num_channels = int(cfg['channels'])
+        self.frame_size = int(cfg['downsample_rate'])
+        self.frame_rate = self.sample_rate / self.frame_size
+        self.num_codebooks = int(cfg['num_quantizers'])
+
+        sess_options = ort.SessionOptions()
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        sess_options.intra_op_num_threads = intra_op_num_threads
+        sess_options.inter_op_num_threads = 1
+        resolved = providers or ['CPUExecutionProvider']
+
+        def _session(key: str):
+            return ort.InferenceSession(
+                str(codec_dir / meta['files'][key]),
+                sess_options=sess_options,
+                providers=resolved)
+
+        self._decode_full_sess = _session('decode_full')
+        self._decode_step_sess = _session('decode_step')
+
+    def decode(self, codes_bkt: np.ndarray) -> np.ndarray:
         '''(B, K, T) int codes -> (B, T_audio) float32 mono at sample_rate.'''
         codes = np.asarray(codes_bkt)
         if codes.ndim == 2:
-            codes = codes[(None, :, :)]
+            codes = codes[None, :, :]
         codes_btk = codes.transpose(0, 2, 1).astype(np.int32)
-        lengths = np.array([
-            codes_btk.shape[1]], dtype = np.int32)
-        (audio, audio_lengths) = self._decode_full_sess.run(None, {
-            'audio_codes': codes_btk,
-            'audio_code_lengths': lengths })
+        lengths = np.array([codes_btk.shape[1]], dtype=np.int32)
+        (audio, audio_lengths) = self._decode_full_sess.run(
+            None,
+            {'audio_codes': codes_btk, 'audio_code_lengths': lengths})
         n = int(audio_lengths.reshape(-1)[0])
-        return audio[(:, :, :n)].mean(axis = 1).astype(np.float32)
+        return audio[:, :, :n].mean(axis=1).astype(np.float32)
 
-    
-    def streaming_decoder(self = None):
+    def streaming_decoder(self) -> MossStreamingDecoder:
         '''Open a stateful streaming decoder (keeps the causal decoder KV cache
         across chunks). Call decode_chunk per chunk, then close.'''
         return MossStreamingDecoder(self)
 
 
-
 class MossStreamingDecoder:
     '''KV-cached streaming decode over decode_step.onnx, driven by the state
-    layout ``codec_browser_onnx_meta.json``\'s "streaming_decode" section
+    layout ``codec_browser_onnx_meta.json``'s "streaming_decode" section
     describes: per-decoder transformer offsets plus per-layer attention caches
     (key/value/position ring buffers). Use via
     ``MossCodecDecoder.streaming_decoder()``.'''
-    
-    def __init__(self = None, codec = None):
+
+    def __init__(self, codec: MossCodecDecoder):
         self._codec = codec
         self._session = codec._decode_step_sess
-        streaming = codec._meta.get('streaming_decode', { })
+        streaming = codec._meta.get('streaming_decode', {})
         self._transformer_specs = list(streaming.get('transformer_offsets', []))
         self._attention_specs = list(streaming.get('attention_caches', []))
-    # WARNING: Decompyle incomplete
+        self._output_names = [o.name for o in self._session.get_outputs()]
+        self._state = {}
+        self._reset_state()
 
-    
-    def _reset_state(self = None):
-        self._state = { }
+    def _reset_state(self) -> None:
+        self._state = {}
         for spec in self._transformer_specs:
-            self._state[str(spec['input_name'])] = np.zeros(tuple(spec['shape']), dtype = np.int32)
+            self._state[str(spec['input_name'])] = np.zeros(tuple(spec['shape']), dtype=np.int32)
         for spec in self._attention_specs:
-            self._state[str(spec['offset_input_name'])] = np.zeros(tuple(spec['offset_shape']), dtype = np.int32)
-            self._state[str(spec['cached_keys_input_name'])] = np.zeros(tuple(spec['cache_shape']), dtype = np.float32)
-            self._state[str(spec['cached_values_input_name'])] = np.zeros(tuple(spec['cache_shape']), dtype = np.float32)
-            self._state[str(spec['cached_positions_input_name'])] = np.full(tuple(spec['positions_shape']), -1, dtype = np.int32)
+            self._state[str(spec['offset_input_name'])] = np.zeros(
+                tuple(spec['offset_shape']), dtype=np.int32)
+            self._state[str(spec['cached_keys_input_name'])] = np.zeros(
+                tuple(spec['cache_shape']), dtype=np.float32)
+            self._state[str(spec['cached_values_input_name'])] = np.zeros(
+                tuple(spec['cache_shape']), dtype=np.float32)
+            # hàng đợi vị trí khởi tạo bằng -1, không phải 0: 0 là một vị trí hợp lệ
+            self._state[str(spec['cached_positions_input_name'])] = np.full(
+                tuple(spec['positions_shape']), -1, dtype=np.int32)
 
-    
-    def decode_chunk(self = None, codes_bkt = None):
+    def decode_chunk(self, codes_bkt: np.ndarray) -> np.ndarray:
         '''(1, K, n) int codes -> (1, chunk_samples) float32 mono.'''
         codes = np.asarray(codes_bkt)
         if codes.ndim == 2:
-            codes = codes[(None, :, :)]
+            codes = codes[None, :, :]
         codes_btk = codes.transpose(0, 2, 1).astype(np.int32)
-    # WARNING: Decompyle incomplete
 
-    
-    def close(self = None):
+        feeds = {
+            'audio_codes': codes_btk,
+            'audio_code_lengths': np.array([codes_btk.shape[1]], dtype=np.int32),
+            **self._state}
+
+        outputs = self._session.run(None, feeds)
+        named = dict(zip(self._output_names, outputs))
+        for spec in self._transformer_specs:
+            self._state[str(spec['input_name'])] = named[str(spec['output_name'])]
+        for spec in self._attention_specs:
+            for key in ('offset', 'cached_keys', 'cached_values', 'cached_positions'):
+                self._state[str(spec[f'{key}_input_name'])] = named[str(spec[f'{key}_output_name'])]
+        n = int(named['audio_lengths'].reshape(-1)[0])
+        return named['audio'][:, :, :n].mean(axis=1).astype(np.float32)
+
+    def close(self) -> None:
         self._reset_state()
-
-

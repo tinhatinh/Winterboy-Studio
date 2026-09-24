@@ -27,7 +27,11 @@ def _clock(seconds = None):
     (minutes, secs) = divmod(max(0, seconds), 60)
     return f'''{int(minutes):02d}:{secs:04.1f}'''
 
-_Row = <NODE:12>()
+@dataclass
+class _Row:
+    pos: int
+    picked: tk.BooleanVar
+    entry: tk.Entry
 
 class ManualTranslateDialog(ctk.CTkToplevel):
     pass

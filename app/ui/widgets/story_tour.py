@@ -18,14 +18,30 @@ HIGHLIGHT_BORDER = ('#D97706', '#F59E0B')
 HIGHLIGHT_BG = ('#FEF3C7', '#2D2415')
 HIGHLIGHT_BADGE_BG = ('#FDE68A', '#451A03')
 HIGHLIGHT_BADGE_TXT = ('#92400E', '#FCD34D')
-TourStep = <NODE:12>()
+
+
+@dataclass
+class TourStep:
+    '''Định nghĩa một bước trong hành trình hướng dẫn người dùng.'''
+    target_widget: Any
+    title: str
+    description: str
+    category: str = 'HƯỚNG DẪN DỰNG TRUYỆN'
+    hint: str = ''
 
 class InteractiveTourGuide:
     '''Bộ điều hướng và hiển thị tour hướng dẫn từng bước trực quan với hiệu ứng Spotlight.'''
     
-    def __init__(self = None, parent = None, steps = None, *, on_finish):
+    def __init__(self = None, parent = None, steps = None, *, on_finish = None):
         self.parent = parent
-    # WARNING: Decompyle incomplete
+        self.steps = [s for s in steps if s.target_widget is not None]
+        self.on_finish = on_finish
+        self.current_step_idx = 0
+        self._card_window = None
+        self._spotlight_window = None
+        self._highlighted_widget = None
+        self._original_style = {}
+        self._parent_configure_cid = None
 
     
     def start(self = None):
@@ -37,13 +53,10 @@ class InteractiveTourGuide:
         
         try:
             self._parent_configure_cid = top.bind('<Configure>', self._on_parent_configure, add = '+')
-            self._show_step(0)
-            return None
         except Exception:
             self._parent_configure_cid = None
-            continue
-
-
+        self._show_step(0)
+        return None
     
     def _on_parent_configure(self = None, event = None):
         pass
@@ -87,30 +100,21 @@ class InteractiveTourGuide:
         try:
             widget.update_idletasks()
             curr = widget
-            if curr:
+            while curr:
                 parent = getattr(curr, 'master', None)
                 if parent and hasattr(parent, '_parent_canvas'):
                     canvas = parent._parent_canvas
                     wy = widget.winfo_y()
-                    if not canvas.winfo_height():
-                        canvas.winfo_height()
-                    ch = 1
-                    if not parent.winfo_height():
-                        parent.winfo_height()
-                    total_h = 1
+                    ch = canvas.winfo_height() or 1
+                    total_h = parent.winfo_height() or 1
                     if total_h > ch:
-                        fraction = max(0, min(1, (wy - 30) / float(total_h)))
+                        fraction = max(0.0, min(1.0, (wy - 30) / float(total_h)))
                         canvas.yview_moveto(fraction)
                     return None
-                    
-                    try:
-                        curr = parent
-                        if curr:
-                            continue
-                        return None
-                        return None
-                    except Exception:
-                        return None
+                curr = parent
+            return None
+        except Exception:
+            return None
 
 
 

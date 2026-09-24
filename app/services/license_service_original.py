@@ -6,9 +6,23 @@ License service module - patched version
 This module is a minimal replacement that provides unlimited lifetime access
 '''
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
-LicenseInfo = <NODE:12>()
+
+
+@dataclass
+class LicenseInfo:
+    hwid: str = ''
+    device_name: str = ''
+    tier: str = 'none'
+    status: str = 'unregistered'
+    expires_at: str = ''
+    days_remaining: int = 0
+    is_valid: bool = False
+    message: str = ''
+    license_key: str = ''
+    updated_at: float = field(default_factory = time.time)
+
 
 def check_license():
     '''Always return a valid lifetime license'''

@@ -1,6 +1,4 @@
-# Source Generated with Decompyle++
-# File: job_workspace.pyc (Python 3.12)
-
+# -*- coding: utf-8 -*-
 '''Quản lý workspace bền vững cho từng tác vụ của Winterboy Studio.
 
 Không dùng ``temp`` cho dữ liệu người dùng.  Mỗi lần STT, dịch hoặc render
@@ -35,40 +33,33 @@ DEFAULT_VIDEO_OUTPUT.mkdir(parents = True, exist_ok = True)
 (OUTPUT_ROOT / 'voice_library').mkdir(parents = True, exist_ok = True)
 STORY_PROJECTS_ROOT.mkdir(parents = True, exist_ok = True)
 
-def _safe_name(value = None, *, fallback):
+def _safe_name(value: str, *, fallback: str = 'job') -> str:
     '''Tên thư mục ngắn, đọc được và an toàn trên Windows.'''
     normalized = unicodedata.normalize('NFKC', value)
-    cleaned = re.sub('[^\\w.-]+', '-', normalized, flags = re.UNICODE).strip('-._')
-    if not cleaned:
-        cleaned
-    return fallback[:24]
+    cleaned = re.sub('[^\\w.-]+', '-', normalized, flags=re.UNICODE).strip('-._')
+    return (cleaned or fallback)[:24]
 
 
-def create_job_workspace(kind = None, source = None):
+def create_job_workspace(kind: str, source: str | Path | None = None) -> Path:
     '''Tạo workspace duy nhất: ``output/jobs/<time>_<kind>_<video>_<id>``.'''
-    if not source:
-        source
-    source_value = str(kind)
+    source_value = str(source or kind)
     source_name = Path(source_value).stem if source else kind
     stamp = time.strftime('%Y%m%d_%H%M%S')
-    digest = hashlib.sha1(source_value.encode('utf-8', errors = 'ignore')).hexdigest()[:7]
-    base = f'''{stamp}_{_safe_name(kind)}_{_safe_name(source_name)}_{digest}'''
+    digest = hashlib.sha1(source_value.encode('utf-8', errors='ignore')).hexdigest()[:7]
+    base = f'{stamp}_{_safe_name(kind)}_{_safe_name(source_name)}_{digest}'
     candidate = JOBS_ROOT / base
     suffix = 2
-    if candidate.exists():
-        candidate = JOBS_ROOT / f'''{base}_{suffix}'''
+    while candidate.exists():
+        candidate = JOBS_ROOT / f'{base}_{suffix}'
         suffix += 1
-        if candidate.exists():
-            continue
-    candidate.mkdir(parents = True, exist_ok = False)
+    candidate.mkdir(parents=True, exist_ok=False)
     for child in ('srt', 'stt', 'translated', 'tts', 'mp4'):
-        (candidate / child).mkdir(exist_ok = True)
+        (candidate / child).mkdir(exist_ok=True)
     return candidate
 
 
-def is_managed_job_path(path = None):
+def is_managed_job_path(path: str | Path) -> bool:
     '''Cho biết path có nằm trong kho job của ứng dụng không.'''
-    
     try:
         return JOBS_ROOT.resolve() in Path(path).resolve().parents
     except OSError:

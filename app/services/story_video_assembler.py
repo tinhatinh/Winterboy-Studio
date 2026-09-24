@@ -40,9 +40,10 @@ def _ffmpeg():
 def _hidden_kwargs():
     if not sys.platform.startswith('win'):
         return { }
-    creationflags = None(subprocess, 'CREATE_NO_WINDOW', 134217728)
+    creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 134217728)
     startupinfo = subprocess.STARTUPINFO()
-    getattr(subprocess, 'SW_HIDE', 0) = startupinfo, startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1), .dwFlags
+    startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1)
+    startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
     return {
         'creationflags': creationflags,
         'startupinfo': startupinfo }
@@ -82,18 +83,17 @@ def _create_placeholder_image(output_path = None, width = None, height = None, t
     try:
         font_lg = ImageFont.truetype('arial.ttf', size = int(min(width, height) * 0.042))
         font_sm = ImageFont.truetype('arial.ttf', size = int(min(width, height) * 0.024))
-        top_label = 'MUMU STORYTELLING  ·  STORYBOARD'
-        draw.text((width // 2, int(height * 0.38)), top_label, fill = (56, 189, 248), anchor = 'mm', font = font_sm)
-        main_title = f'''PHÂN CẢNH: {title[:45]}'''
-        draw.text((width // 2, int(height * 0.48)), main_title, fill = (241, 245, 249), anchor = 'mm', font = font_lg)
-        sub_note = subtitle[:60] if subtitle else 'Âm thanh & Phụ đề sẵn sàng  ·  Chờ nạp Hình ảnh / Video AI'
-        draw.text((width // 2, int(height * 0.58)), sub_note, fill = (148, 163, 184), anchor = 'mm', font = font_sm)
-        img.save(output_path)
-        return output_path
     except Exception:
         font_lg = ImageFont.load_default()
         font_sm = ImageFont.load_default()
-        continue
+    top_label = 'MUMU STORYTELLING  ·  STORYBOARD'
+    draw.text((width // 2, int(height * 0.38)), top_label, fill = (56, 189, 248), anchor = 'mm', font = font_sm)
+    main_title = f'''PHÂN CẢNH: {title[:45]}'''
+    draw.text((width // 2, int(height * 0.48)), main_title, fill = (241, 245, 249), anchor = 'mm', font = font_lg)
+    sub_note = subtitle[:60] if subtitle else 'Âm thanh & Phụ đề sẵn sàng  ·  Chờ nạp Hình ảnh / Video AI'
+    draw.text((width // 2, int(height * 0.58)), sub_note, fill = (148, 163, 184), anchor = 'mm', font = font_sm)
+    img.save(output_path)
+    return output_path
 
 
 
@@ -107,9 +107,7 @@ def build_ken_burns_vf(motion, duration, width, height, fps = None, with_fade = 
     - Hook: Zoom / Shake / Whip pan mượt mà, hạn chế tối đa phóng đại làm vỡ bố cục.
     '''
     total_frames = max(1, int(round(duration * fps)))
-    if not motion:
-        motion
-    motion = 'zoom_in'.lower().strip()
+    motion = (motion or 'zoom_in').lower().strip()
     interp = 'cubic'
     filters = []
     p_lin = f'''(in/{total_frames})'''
@@ -200,13 +198,11 @@ def scene_media_key(sc = None):
     img = sc.get('image_path')
     if m_type == 'video' and v and Path(v).is_file():
         return f'''v:{Path(v).resolve()}'''
-    if None and Path(img).is_file():
+    if img and Path(img).is_file():
         return f'''i:{Path(img).resolve()}'''
-    if None and Path(v).is_file():
+    if v and Path(v).is_file():
         return f'''v:{Path(v).resolve()}'''
-    if not sc.get('scene_id'):
-        sc.get('scene_id')
-    return f'''{sc.get('index')}'''
+    return f'''none:{sc.get('scene_id') or sc.get('index')}'''
 
 
 def render_scene_clip(scene, output_path, width, height, fps, encoder, encoder_args = None, fast = None, with_fade = None, fade_in = (1920, 1080, 60, 'h264_nvenc', None, False, True, True, True), fade_out = ('scene', 'dict[str, Any]', 'output_path', 'str | Path', 'width', 'int', 'height', 'int', 'fps', 'int', 'encoder', 'str', 'encoder_args', 'list[str] | None', 'fast', 'bool', 'with_fade', 'bool', 'fade_in', 'bool', 'fade_out', 'bool', 'return', 'Path')):
@@ -214,43 +210,28 @@ def render_scene_clip(scene, output_path, width, height, fps, encoder, encoder_a
     ffmpeg_bin = _ffmpeg()
     out_clip = Path(output_path).resolve()
     out_clip.parent.mkdir(parents = True, exist_ok = True)
-    if not scene.get('duration_s'):
-        scene.get('duration_s')
-    duration = float(0)
+    duration = float(scene.get('duration_s') or 0.0)
     if duration <= 0:
         duration = 4
     m_type = scene.get('media_type', 'image')
     video_path = scene.get('video_path')
     img_path = scene.get('image_path')
     if m_type == 'video':
-        if video_path:
-            video_path
-        is_video_scene = bool(Path(video_path).is_file())
+        is_video_scene = bool(video_path and Path(video_path).is_file())
     elif m_type == 'image':
         is_video_scene = False
-    elif video_path:
-        video_path
-        if Path(video_path).is_file():
-            Path(video_path).is_file()
-            if img_path:
-                img_path
-    is_video_scene = bool(not Path(img_path).is_file())
+    else:
+        is_video_scene = bool(video_path and Path(video_path).is_file() and not (img_path and Path(img_path).is_file()))
     audio_path = scene.get('audio_path')
-    if audio_path:
-        audio_path
-    has_audio = bool(Path(audio_path).is_file())
+    has_audio = bool(audio_path and Path(audio_path).is_file())
     motion = scene.get('camera_motion', 'zoom_in')
-    if not scene.get('video_start_s'):
-        scene.get('video_start_s')
-    video_start = float(0)
+    video_start = float(scene.get('video_start_s') or 0.0)
 # WARNING: Decompyle incomplete
 
 
 def _hex_to_ass_color(hex_color = None, alpha = None):
     '''Chuyển đổi mã màu hex (#RRGGBB) sang định dạng màu ASS (&HAABBGGRR).'''
-    if not hex_color:
-        hex_color
-    hex_str = str('#FFFFFF').lstrip('#')
+    hex_str = str(hex_color or '#FFFFFF').lstrip('#')
     if len(hex_str) != 6:
         hex_str = 'FFFFFF'
     
@@ -258,11 +239,10 @@ def _hex_to_ass_color(hex_color = None, alpha = None):
         r = int(hex_str[0:2], 16)
         g = int(hex_str[2:4], 16)
         b = int(hex_str[4:6], 16)
-        a_int = max(0, min(255, int(round((1 - alpha) * 255))))
-        return f'''&H{a_int:02X}{b:02X}{g:02X}{r:02X}'''
     except Exception:
         (r, g, b) = (255, 255, 255)
-        continue
+    a_int = max(0, min(255, int(round((1 - alpha) * 255))))
+    return f'''&H{a_int:02X}{b:02X}{g:02X}{r:02X}'''
 
 
 

@@ -1,8 +1,33 @@
+# Giao diện & render
 customtkinter>=5.2.0
-tkinter
+Pillow
+numpy
+opencv-python
+moviepy
 pydub
 requests
-opencv-python
-numpy
-moviepy
+
+# (tkinter đi kèm CPython nên KHÔNG khai báo ở đây — pip install tkinter sẽ fail)
+
+# Phụ đề
+pysrt
+
+# CapCut cloud TTS/STT — engine dùng curl_cffi để giả trình duyệt (chống shark block)
+curl_cffi
+
+# Edge TTS
 edge-tts
+
+# ZeroTTS (offline, giọng Việt) — nhóm nặng, chỉ cần nếu dùng engine này
+torch
+onnxruntime
+soundfile
+scipy
+tokenizers
+huggingface-hub
+
+# Tiện ích phụ
+pygame
+
+# Tách lời/nền bằng Demucs (tuỳ chọn, rất nặng; app cũng tự tìm demucs.exe nếu đã cài)
+# demucs

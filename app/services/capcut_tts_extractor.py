@@ -28,18 +28,19 @@ def _hidden_kwargs():
     if sys.platform.startswith('win'):
         creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 134217728)
         startupinfo = subprocess.STARTUPINFO()
-        getattr(subprocess, 'SW_HIDE', 0) = startupinfo, startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1), .dwFlags
+        startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1)
+        startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
         return {
             'creationflags': creationflags,
             'startupinfo': startupinfo }
+    return { }
 
 
 def get_default_drafts_root():
-    if not os.environ.get('MUMU_CAPCUT_DRAFTS'):
-        os.environ.get('MUMU_CAPCUT_DRAFTS')
-    override = ''.strip()
+    override = (os.environ.get('MUMU_CAPCUT_DRAFTS') or '').strip()
     if override:
         return Path(override)
+    return WINDOWS_DRAFTS_ROOT
 
 
 def find_latest_capcut_project(drafts_root = None):
@@ -57,22 +58,22 @@ def find_latest_capcut_project(drafts_root = None):
     if not candidates:
         return None
     
-    def _mtime(p = None):
-        
+    def _mtime(p: Path) -> float:
+
         try:
             content = p / 'draft_content.json'
             if content.is_file():
                 return content.stat().st_mtime
-            return None.stat().st_mtime
+            return p.stat().st_mtime
         except OSError:
-            return 0
+            return 0.0
 
 
     candidates.sort(key = _mtime, reverse = True)
     return candidates[0]
 
 
-def extract_tts_audio_from_capcut(project_dir = None, output_dir = None):
+def extract_tts_audio_from_capcut(project_dir: 'Path | str | None' = None, output_dir: 'Path | str | None' = None) -> 'Path | None':
     '''Trích xuất và đồng bộ âm thanh TTS từ CapCut draft thành 1 file master.
 
     Args:
@@ -82,17 +83,8 @@ def extract_tts_audio_from_capcut(project_dir = None, output_dir = None):
     Returns:
         Path tới file audio master (.mp3/.wav), hoặc None nếu không tìm thấy audio.
     '''
-    proj = Path(project_dir) if project_dir else find_latest_capcut_project()
-    if not proj or proj.is_dir():
-        logger.warning('Không tìm thấy thư mục project CapCut: %s', proj)
-        return None
-    content_file = proj / 'draft_content.json'
-    if not content_file.is_file():
-        tmp_file = proj / 'template-2.tmp'
-        if tmp_file.is_file():
-            content_file = tmp_file
-        else:
-            logger.warning('Không tìm thấy draft_content.json trong %s', proj)
-            return None
-# WARNING: Decompyle incomplete
+    # Bản decompile dừng ở bước chọn `content_file` (dòng 105 trong dis); phần đọc
+    # draft_content.json, ghép audio theo timeline và chạy FFmpeg (~850 instruction)
+    # mất hoàn toàn -> chưa có căn cứ để viết lại, không đoán.
+    raise NotImplementedError('chưa khôi phục từ bytecode: capcut_tts_extractor.extract_tts_audio_from_capcut')
 

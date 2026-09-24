@@ -14,8 +14,8 @@ import json
 import logging
 import os
 import time
-import urllib.error as urllib
-import urllib.request as urllib
+import urllib.error
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -39,30 +39,25 @@ def _ensure_cache_dir():
 
 def load_cached_notifications():
     '''Đọc danh sách thông báo đã lưu trong bộ đệm cục bộ (tối đa 10 thông báo).'''
-    
+
     try:
         if NOTIFICATION_CACHE_FILE.is_file():
             raw = NOTIFICATION_CACHE_FILE.read_text(encoding = 'utf-8')
             data = json.loads(raw)
             if isinstance(data, list):
                 return data[:10]
-            if None(data, dict) and 'notifications' in data:
+            if isinstance(data, dict) and 'notifications' in data:
                 return data.get('notifications', [])[:10]
-            return None
-        except Exception:
-            exc = None
-            logger.debug('Không thể đọc cache thông báo: %s', exc)
-            exc = None
-            del exc
-            return []
-            exc = None
-            del exc
+        return []
+    except Exception as exc:
+        logger.debug('Không thể đọc cache thông báo: %s', exc)
+        return []
 
 
 
 def save_cached_notifications(notifications = None):
     '''Lưu tối đa 10 thông báo gần nhất vào file bộ đệm cục bộ.'''
-    
+
     try:
         _ensure_cache_dir()
         payload = {
@@ -71,14 +66,9 @@ def save_cached_notifications(notifications = None):
             'updated_at_str': datetime.now().strftime('%Y-%m-%d %H:%M:%S') }
         NOTIFICATION_CACHE_FILE.write_text(json.dumps(payload, ensure_ascii = False, indent = 2), encoding = 'utf-8')
         return None
-    except Exception:
-        exc = None
+    except Exception as exc:
         logger.warning('Không thể lưu cache thông báo: %s', exc)
-        exc = None
-        del exc
         return None
-        exc = None
-        del exc
 
 
 
@@ -97,69 +87,40 @@ def load_notification_state():
 
 def save_notification_state(state = None):
     '''Lưu trạng thái hiển thị thông báo.'''
-    
+
     try:
         _ensure_cache_dir()
         NOTIFICATION_STATE_FILE.write_text(json.dumps(state, ensure_ascii = False, indent = 2), encoding = 'utf-8')
         return None
-    except Exception:
-        exc = None
+    except Exception as exc:
         logger.warning('Không thể lưu trạng thái thông báo: %s', exc)
-        exc = None
-        del exc
         return None
-        exc = None
-        del exc
 
 
 
-def fetch_latest_notifications(limit = None, force_online = None):
+def fetch_latest_notifications(limit = 10, force_online = False):
     '''Lấy danh sách thông báo mới nhất từ Supabase REST API hoặc fallback cache.
 
     Trả về tối đa `limit` thông báo (mặc định 10).
     '''
     (url, key) = get_supabase_config()
-    if url and 'your-project' in url and key or 'your-anon' in key:
+    if not url or 'your-project' in url or not key or 'your-anon' in key:
         return load_cached_notifications()
-    target_url = f'''{None.rstrip('/')}/rest/v1/app_notifications?is_active=eq.true&order=created_at.desc&limit={limit}'''
+    target_url = f'''{url.rstrip('/')}/rest/v1/app_notifications?is_active=eq.true&order=created_at.desc&limit={limit}'''
     req = urllib.request.Request(target_url, headers = {
         'apikey': key,
         'Authorization': f'''Bearer {key}''',
         'Accept': 'application/json' }, method = 'GET')
-    
+
     try:
-        resp = urllib.request.urlopen(req, timeout = 6)
-        data = json.loads(resp.read().decode('utf-8'))
-        if isinstance(data, list):
-            save_cached_notifications(data)
-            
-            try:
-                None(None, None)
-                return 
-                
-                try:
-                    None(None, None)
-                    return load_cached_notifications()
-                    with None:
-                        if not None, data[:limit]:
-                            pass
-                    
-                    try:
-                        return load_cached_notifications()
-                        
-                        try:
-                            pass
-                        except Exception:
-                            logger.debug('Không thể tải thông báo trực tuyến từ Supabase (%s), sử dụng cache.', exc)
-                            None = None
-                            del exc
-                            return load_cached_notifications()
-                            exc = None
-                            del exc
-
-
-
-
+        with urllib.request.urlopen(req, timeout = 6) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            if isinstance(data, list):
+                save_cached_notifications(data)
+                return data[:limit]
+    except Exception as exc:
+        logger.debug('Không thể tải thông báo trực tuyến từ Supabase (%s), sử dụng cache.', exc)
+    return load_cached_notifications()
 
 
 

@@ -55,22 +55,18 @@ def _apply_wrap(label = None, pixels = None):
     '''
     
     try:
-        if not float(ctk.ScalingTracker.get_widget_scaling(label)):
-            float(ctk.ScalingTracker.get_widget_scaling(label))
-        scaling = 1
-        target = max(100, int(pixels / scaling))
-        if abs(int(getattr(label, '_mumu_wrap', -1)) - target) <= 6:
-            return None
-        label._mumu_wrap = target
-        
-        try:
-            label.configure(wraplength = target)
-            return None
-            except Exception:
-                scaling = 1
-                continue
-        except Exception:
-            return None
+        scaling = float(ctk.ScalingTracker.get_widget_scaling(label)) or 1.0
+    except Exception:
+        scaling = 1.0
+    target = max(100, int(pixels / scaling))
+    if abs(int(getattr(label, '_mumu_wrap', -1)) - target) <= 6:
+        return None
+    label._mumu_wrap = target
+
+    try:
+        label.configure(wraplength = target)
+    except Exception:
+        return None
 
 
 
