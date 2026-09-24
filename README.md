@@ -1,5 +1,7 @@
 # Winterboy Studio - Open Source Edition ❄️
 
+**Phiên bản: v1.2**
+
 Chào các đạo hữu,
 
 Sau một thời gian mò mẫm reverse engineer các tool trên những group MMO, cuối cùng mình cũng hiểu được workflow phía sau cách các tool làm video hoạt động.
@@ -53,6 +55,14 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 3. Giải nén ra một thư mục bất kỳ.
 4. Chạy file `WinterboyStudio.exe` để bắt đầu làm việc!
 
+> **Về số phiên bản hiển thị trong giao diện.** `__version__` khai báo một chỗ duy
+> nhất ở `app/__init__.py` (hiện là `1.2`). Chuỗi `v1.01` bạn còn thấy trên tiêu đề
+> cửa sổ, badge trên header và hộp Cài đặt đến từ `main_window.pyc` /
+> `settings_dialog.pyc`: thân hai module đó chưa được khôi phục xong trong source
+> (`main_window.py` mới có 1/207 code object), nên chưa có chỗ để đổi chữ trong
+> source. Đây là điểm khác biệt giữa "mã nguồn" và "bản đã build" cần nói thẳng,
+> không phải chỗ bị bỏ quên — nó sẽ khớp khi build lại từ source bằng `build.bat`.
+
 ---
 
 ## 🚀 Dành cho nhà phát triển (Chạy từ mã nguồn)
@@ -83,6 +93,12 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
    ```bash
    python main.py
    ```
+   **Hiện vẫn chưa chạy được từ source, nói thẳng để bạn khỏi mất công debug.**
+   Tính tới bản này, `app/ui/main_window.py` mới khôi phục được 1/207 code object
+   nên cửa sổ chính còn trống; `import main` thì OK nhưng nạp `app.ui.control_panel`
+   sẽ fail. Muốn dùng ngay, tải Release zip ở mục trên. Muốn đóng góp, hãy sửa các
+   module theo quy trình dưới rồi chạy `tools/audit_installed_app.py` — tool này dựng
+   thật cửa sổ của **bản đã cài** nên bắt được cả lỗi mà `import` không lộ.
 
 ### ⚠️ Trạng thái mã nguồn, nói thẳng
 

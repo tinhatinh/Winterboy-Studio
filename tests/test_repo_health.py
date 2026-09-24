@@ -52,7 +52,6 @@ RESTORED = [
 # vs '1.01', AppUserModelID '...1.0' vs '...1.01', và gọi AttachThreadInput qua
 # kernel32 thay vì user32.
 BYTE_EXACT = [
-    'app/__init__.py',
     'app/services/capcut_common_task_client.py',
     'app/services/demucs_separator.py',
     'app/services/edge_tts_engine.py',
@@ -74,6 +73,13 @@ BYTE_EXACT = [
     'app/ui/modules/module_subtitle.py',
     'main.py',
 ]
+
+# File ĐƯỢC PHÉP lệch khỏi .pyc đã phát hành, kèm số chỗ tối đa và lý do.
+# Không có mục này thì mỗi lần nâng phiên bản là cổng bytecode đỏ, và người ta sẽ
+# bỏ qua cổng thay vì khai báo ý định.
+ALLOWED_DRIFT = {
+    'app/__init__.py': (1, 'nâng __version__ lên 1.2 (bản phát hành đang là 1.01)'),
+}
 
 
 def _paths():
@@ -119,7 +125,7 @@ def test_bytecode_lock_stays_exact():
     '''
     import compare_bytecode as cbc
     missing, drifted = [], []
-    for rel in BYTE_EXACT:
+    for rel in (*BYTE_EXACT, *ALLOWED_DRIFT):
         path = REPO / rel
         if not path.is_file():
             missing.append(rel)
@@ -132,10 +138,23 @@ def test_bytecode_lock_stays_exact():
         except Exception as exc:
             drifted.append(f'{rel}: {type(exc).__name__} {str(exc)[:60]}')
             continue
-        if bad:
-            drifted.append(f'{rel}: {len(bad)} chỗ — {bad[0][0]} {bad[0][1][:70]}')
+        budget = ALLOWED_DRIFT.get(rel, (0, ''))[0]
+        if len(bad) > budget:
+            drifted.append(f'{rel}: {len(bad)} chỗ, chỉ cho phép {budget} — {bad[0][0]} '
+                           f'{bad[0][1][:70]}')
     assert not missing, f'mất file cần khóa: {missing}'
     assert not drifted, 'bytecode lệch so với bản phát hành:\n  ' + '\n  '.join(drifted)
+
+
+def test_phien_ban_khai_bao_o_dung_mot_ch():
+    '''Phiên bản phải sống duy nhất ở app/__init__.py và UI lấy từ đó suy ra.'''
+    import app as pkg
+
+    assert pkg.__version__ == '1.2', pkg.__version__
+    assert pkg.VERSION_LABEL == f'v{pkg.__version__}'
+    # không được có nguồn phiên bản thứ hai âm thầm xuất hiện trong source đã khôi phục
+    text = (REPO / 'app' / '__init__.py').read_text(encoding='utf-8')
+    assert text.count('__version__ =') == 1, 'khai báo __version__ ở nhiều chỗ'
 
 
 def test_check_source_cli_green_on_restored():
