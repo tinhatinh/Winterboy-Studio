@@ -235,6 +235,74 @@ def test_build_command_normalizes_time_flags():
     assert cmd[cmd.index('--time_end') + 1] == '00:00:20', cmd
 
 
+# ---------------------------------------------------------------- ngôn ngữ OCR
+# Bảng này ĐO bằng cách gọi thật videocr-cli.exe --lang <x> trên clip 1 giây rồi
+# xem nó có ném "Unsupported OCR language code" không (VideOCR bản đang cài).
+LANG_OK = ('ch', 'chinese_cht', 'en', 'vi', 'japan', 'korean', 'th', 'id', 'ar', 'ru',
+           'de', 'fr', 'es', 'pt', 'it', 'ta', 'te', 'ka', 'tr', 'fa', 'pl', 'nl', 'sv',
+           'uk', 'hi', 'ms', 'tl', 'sw', 'ro', 'el', 'hu', 'cs', 'da', 'fi', 'no')
+LANG_BAD = ('zh', 'ja', 'ko', 'jp', 'cht', 'arab', 'latin', 'cyrillic',
+            'devanagari', 'urdu', 'he', 'chinese', 'ch en', 'ch,en', 'en,ch')
+
+
+def test_resolve_lang_nhan_ca_ma_lan_nhan():
+    from app.services.videocr_ocr import resolve_lang
+
+    assert resolve_lang('ch') == 'ch'
+    assert resolve_lang('Chinese & English') == 'ch'
+    assert resolve_lang('  CHINESE & ENGLISH  ') == 'ch'      # hoa thường + thừa cách
+    assert resolve_lang('japan') == 'japan'
+    assert resolve_lang('Japanese') == 'japan'
+    assert resolve_lang('Vietnamese') == 'vi'
+
+
+def test_resolve_lang_bac_ma_khong_ton_tai():
+    ''''zh' là cái bẫy: ai cũng gõ 'zh' nhưng VideOCR chỉ nhận 'ch'.
+
+    Lưu ý 'hindi' không nằm ở đây: làm MÃ thì CLI từ chối, nhưng làm NHÃN thì hợp
+    lệ vì bảng mình map 'Hindi' -> 'hi'.
+    '''
+    from app.services.videocr_ocr import resolve_lang
+
+    for bad in LANG_BAD:
+        assert resolve_lang(bad) is None, bad
+    assert resolve_lang(None) is None and resolve_lang('') is None and resolve_lang('  ') is None
+
+
+def test_bang_ngon_ngu_dung_duoc_va_khong_trung():
+    from app.services.videocr_ocr import (DEFAULT_LANG, OCR_LANGUAGES, language_codes,
+                                          language_labels, label_for)
+
+    codes, labels = language_codes(), language_labels()
+    assert len(set(codes)) == len(codes) == len(OCR_LANGUAGES)
+    assert len(set(labels)) == len(labels)
+    assert DEFAULT_LANG in codes
+    assert label_for('ch') == 'Chinese & English'
+    assert set(LANG_OK) == set(codes), (set(LANG_OK) - set(codes), set(codes) - set(LANG_OK))
+    # nhãn phải là tên đầy đủ, không phải mã 2 chữ cái người dùng nhìn không ra
+    assert all(len(l) > 3 and ' ' not in l[:2] for l in labels), labels
+
+
+def test_build_command_gui_nhan_ma_khi_dua_nhan():
+    cmd = build_command('cli', 'v', 'o', OcrOptions(lang='Chinese & English'))
+    assert cmd[cmd.index('--lang') + 1] == 'ch', cmd
+    cmd = build_command('cli', 'v', 'o', OcrOptions(lang='Korean'))
+    assert cmd[cmd.index('--lang') + 1] == 'korean', cmd
+
+
+def test_run_ocr_chong_ngon_ngu_sai_truoc_khi_spawn():
+    '''Lỗi ngôn ngữ phải trả lời ngắn gọn, không để VideOCR dump cả bảng --help.'''
+    state = _isolate()
+    try:
+        r = run_ocr(_video(), _scratch('badlang.srt'), cli=_fake_cli(),
+                    opts=OcrOptions(lang='zh'))
+        assert not r.ok and r.error
+        assert "'zh'" in r.error and 'chinese_cht' in r.error
+        assert not (SCRATCH / 'badlang.srt').is_file(), 'vẫn spawn engine dù ngôn ngữ sai'
+    finally:
+        _restore(state)
+
+
 # ---------------------------------------------------------------- parse_progress
 def test_parse_progress_known_lines():
     stage, frac, label = parse_progress('Step 1/2: Processing video... Current: 00:01:30 / 00:03:00, Frame: 900')

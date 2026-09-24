@@ -23,7 +23,8 @@ from app.core.state import AppState
 from app.services import videocr_ocr, video_preview
 from app.ui.modules.base_module import BaseModule, TEXT_DIM
 
-LANGS = ('ch', 'zh', 'en', 'vi', 'ja', 'ko', 'th', 'id', 'pt', 'es', 'fr', 'de')
+LANG_LABELS = videocr_ocr.language_labels()
+DEFAULT_LANG_LABEL = videocr_ocr.label_for(videocr_ocr.DEFAULT_LANG)
 CANVAS_W = 330                 # bề rộng ô preview
 CANVAS_H = 260                 # chiều cao ô preview
 PREVIEW_FPS = 6.0              # frame/giây của luồng giải mã trước
@@ -50,7 +51,7 @@ class ModuleOcr(BaseModule):
         self._q = queue.Queue()
 
         self.var_video = ctk.StringVar(value='')
-        self.var_lang = ctk.StringVar(value='ch')
+        self.var_lang = ctk.StringVar(value=DEFAULT_LANG_LABEL)
         self.var_gpu = ctk.BooleanVar(value=True)
         self.var_min = ctk.StringVar(value='0.3')
         self.var_out = ctk.StringVar(value='')
@@ -91,8 +92,11 @@ class ModuleOcr(BaseModule):
         self.hint('Mặc định lấy video đang mở ở module Video, khỏi chọn lại.')
 
         self.section('Engine VideOCR')
-        self.field('Ngôn ngữ', lambda parent: ctk.CTkOptionMenu(parent, values = list(LANGS),
-                                                                variable = self.var_lang, width = 120))
+        self.field('Ngôn ngữ', lambda parent: ctk.CTkOptionMenu(parent, values = LANG_LABELS,
+                                                                variable = self.var_lang, width = 200))
+        self.lbl_lang = self.hint('')
+        self.var_lang.trace_add('write', lambda *_a: self._show_lang_code())
+        self._show_lang_code()
         self.checks([('Dùng GPU (CUDA)', self.var_gpu)])
         self.number_grid([('Trễ (s)', self.var_min)], columns = 1)
         # tự giữ reference thay vì đoán tên thuộc tính bên trong BaseModule
@@ -171,6 +175,18 @@ class ModuleOcr(BaseModule):
                 self.var_out.set(str(Path(path).with_suffix('.ocr.srt')))
             self.reset_preview()
             self.load_preview()
+
+    def _show_lang_code(self) -> None:
+        '''Cho thấy mã thật sẽ gửi cho VideOCR + nhắc model nào đọc được cả Hoa/Latin.'''
+        label = self.var_lang.get()
+        code = videocr_ocr.resolve_lang(label)
+        if not code:
+            self._set_text(self.lbl_lang, videocr_ocr.unknown_lang_message(label), TEXT_DIM)
+            return
+        note = {'ch': ' — model này đọc cả chữ Hán lẫn chữ Latin nên không bỏ sót từ',
+                'en': ' — chỉ tiếng Anh, sẽ MẤT chữ Hán nếu video lẫn hai thứ',
+                'chinese_cht': ' — chữ Hán phồn thể'}.get(code, '')
+        self._set_text(self.lbl_lang, f'gửi VideOCR: --lang {code}{note}', TEXT_DIM)
 
     def refresh_engine(self) -> None:
         exe = videocr_ocr.find_videocr_cli(getattr(self.state, 'videocr_cli_path', None))
@@ -570,7 +586,11 @@ class ModuleOcr(BaseModule):
             self._status('Bật "chỉ OCR vùng" mà chưa khoanh — kéo chuột lên preview hoặc nhập 4 ô.')
             return
 
-        opts = videocr_ocr.OcrOptions(lang = self.var_lang.get() or 'ch',
+        lang = videocr_ocr.resolve_lang(self.var_lang.get())
+        if lang is None:
+            self._status(videocr_ocr.unknown_lang_message(self.var_lang.get()))
+            return
+        opts = videocr_ocr.OcrOptions(lang = lang,
                                       use_gpu = bool(self.var_gpu.get()),
                                       min_subtitle_duration = min_dur, crop = crop)
         self._stop_playback()

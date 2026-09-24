@@ -98,6 +98,28 @@ def _check_structure(mod, texts) -> list[str]:
             fails.append(f'panel không có {needed} nào')
     if not TIME_RE.search(str(mod.lbl_time.cget('text'))):
         fails.append(f'nhãn thời gian sai định dạng: {mod.lbl_time.cget("text")!r}')
+    # dropdown ngôn ngữ: phải là tên đầy đủ và mọi lựa chọn đều là mã VideOCR nhận
+    from app.services import videocr_ocr
+
+    choices: list = []
+    menu = [w for w in _walk_widget_tree(mod) if type(w).__name__ == 'CTkOptionMenu']
+    if not menu:
+        fails.append('không tìm thấy dropdown ngôn ngữ')
+    else:
+        choices = menu[0].cget('values')
+        if 'Chinese & English' not in choices:
+            fails.append('thiếu lựa chọn "Chinese & English"')
+        if any(c in ('ch', 'en', 'vi', 'zh') for c in choices):
+            fails.append(f'dropdown vẫn hiện mã thay vì tên: {choices[:6]}')
+        bad = [c for c in choices if videocr_ocr.resolve_lang(c) is None]
+        if bad:
+            fails.append(f'có lựa chọn không map được sang mã hợp lệ: {bad}')
+    if videocr_ocr.resolve_lang(mod.var_lang.get()) != 'ch':
+        fails.append(f'mặc định không phải Chinese & English: {mod.var_lang.get()!r}')
+    if 'ch' not in str(mod.lbl_lang.cget('text')):
+        fails.append(f'nhãn không báo mã sẽ gửi: {mod.lbl_lang.cget("text")!r}')
+    print('  dropdown:', len(choices), 'ngôn ngữ | mặc định', repr(mod.var_lang.get()),
+          '|', mod.lbl_lang.cget('text'))
     print('  slider/canvas:', kinds.get('CTkSlider'), kinds.get('CTkCanvas'),
           '| nhãn giờ:', mod.lbl_time.cget('text'))
     return fails

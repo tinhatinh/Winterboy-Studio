@@ -17,6 +17,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
+from app.services import videocr_ocr                              # noqa: E402
 from app.services.videocr_ocr import OcrOptions, find_videocr_cli, run_ocr  # noqa: E402
 
 for _s in (sys.stdout, sys.stderr):
@@ -26,9 +27,14 @@ for _s in (sys.stdout, sys.stderr):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='OCR phụ đề cứng trên video thành SRT (VideOCR).')
-    ap.add_argument('video', help='file video cần OCR')
+    ap.add_argument('video', nargs='?', help='file video cần OCR')
     ap.add_argument('-o', '--output', default=None, help='file .srt đầu ra (mặc định <video>.srt)')
-    ap.add_argument('--lang', default='ch', help='mã ngôn ngữ VideOCR: ch, vi, en, ja…')
+    ap.add_argument('--lang', default='ch',
+                    help='ngôn ngữ OCR: mã (ch, en, vi, japan…) hoặc nhãn '
+                         '("Chinese & English"). Mặc định: ch. Thiếu '
+                         '--list-languages để xem hết danh sách đã kiểm chứng.')
+    ap.add_argument('--list-languages', action='store_true',
+                    help='in mã + tên ngôn ngữ VideOCR bản này nhận, rồi thoát')
     ap.add_argument('--cli', default=None, help='đường dẫn videocr-cli.exe nếu không ở chỗ mặc định')
     ap.add_argument('--no-gpu', action='store_true', help='chạy CPU (chậm hơn nhưng không cần CUDA)')
     ap.add_argument('--min-duration', type=float, default=0.3, dest='min_subtitle_duration',
@@ -40,6 +46,16 @@ def main(argv=None):
     ap.add_argument('--timeout', type=float, default=1800.0)
     ap.add_argument('--print', action='store_true', dest='show', help='in nội dung SRT ra màn hình')
     args = ap.parse_args(argv)
+
+    if args.list_languages:
+        for code, label in videocr_ocr.OCR_LANGUAGES:
+            print(f'{code:<13} {label}')
+        return 0
+    if not args.video:
+        ap.error('thiếu file video (hoặc dùng --list-languages)')
+    if videocr_ocr.resolve_lang(args.lang) is None:
+        print(videocr_ocr.unknown_lang_message(args.lang))
+        return 2
 
     video = Path(args.video)
     if not video.is_file():

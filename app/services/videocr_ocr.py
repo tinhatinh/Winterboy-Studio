@@ -30,12 +30,98 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LANG = 'ch'
 MIN_VERSION_HINT = 'videocr-cli.exe'
+
+# Bảng ngôn ngữ ĐÃ ĐO, không đoán: gọi videocr-cli với từng mã rồi xem nó có nhận
+# "Unsupported OCR language code" hay không (2026-09-24, VideOCR bản cài ở
+# C:\Program Files\VideOCR). Hai chi tiết dễ sai:
+#   * 'zh' và 'ja'/'ko' KHÔNG hợp lệ — mã thật là 'ch' / 'japan' / 'korean';
+#   * thư mục ``languages\`` của VideOCR là bản dịch GIAO DIỆN, không phải danh
+#     sách model OCR, nên đừng lấy nó làm nguồn (ja.json có nhưng --lang ja bị từ chối).
+# Nhãn lấy theo đúng cách VideOCR tự gọi trong GUI: 'ch' là model đọc cả Hoa lẫn
+# Latin — kiểm chứng bằng khung hình "混合 Mixed 文字 text 1234": --lang ch ra đúng
+# cả câu, --lang en mất sạch chữ Hán.
+OCR_LANGUAGES: 'tuple[tuple[str, str], ...]' = (
+    ('ch', 'Chinese & English'),
+    ('chinese_cht', 'Chinese Traditional'),
+    ('en', 'English'),
+    ('vi', 'Vietnamese'),
+    ('japan', 'Japanese'),
+    ('korean', 'Korean'),
+    ('th', 'Thai'),
+    ('id', 'Indonesian'),
+    ('ar', 'Arabic'),
+    ('cs', 'Czech'),
+    ('da', 'Danish'),
+    ('de', 'German'),
+    ('el', 'Greek'),
+    ('es', 'Spanish'),
+    ('fa', 'Persian'),
+    ('fi', 'Finnish'),
+    ('fr', 'French'),
+    ('hi', 'Hindi'),
+    ('hu', 'Hungarian'),
+    ('it', 'Italian'),
+    ('ka', 'Kannada'),
+    ('ms', 'Malay'),
+    ('nl', 'Dutch'),
+    ('no', 'Norwegian'),
+    ('pl', 'Polish'),
+    ('pt', 'Portuguese'),
+    ('ro', 'Romanian'),
+    ('ru', 'Russian'),
+    ('sv', 'Swedish'),
+    ('sw', 'Swahili'),
+    ('ta', 'Tamil'),
+    ('te', 'Telugu'),
+    ('tl', 'Filipino'),
+    ('tr', 'Turkish'),
+    ('uk', 'Ukrainian'),
+)
 SEARCH_DIRS = (
     Path(r'C:\Program Files\VideOCR'),
     Path(r'C:\Program Files (x86)\VideOCR'),
     Path(os.environ.get('LOCALAPPDATA', str(Path.home))) / 'Programs' / 'VideOCR',
 )
 ENV_KEYS = ('WINTERBOY_VIDEOCR', 'VIDEOOCR_CLI', 'VIDEOOCR_HOME')
+
+
+def language_labels() -> 'list[str]':
+    '''Tên đầy đủ để hiển thị trong danh sách, theo đúng thứ tự ưu tiên.'''
+    return [label for _code, label in OCR_LANGUAGES]
+
+
+def language_codes() -> 'list[str]':
+    return [code for code, _label in OCR_LANGUAGES]
+
+
+def label_for(code: str) -> str:
+    for value, label in OCR_LANGUAGES:
+        if value == code:
+            return label
+    return str(code)
+
+
+def resolve_lang(value: 'str | None') -> 'str | None':
+    '''Nhãn ("Chinese & English") hay mã ("ch") cũng ra mã đúng; sai thì None.
+
+    Nhận cả dạng không hoa thường và có dấu cách thừa để người dùng gõ tay vẫn chạy.
+    '''
+    if value is None:
+        return None
+    needle = str(value).strip().casefold()
+    if not needle:
+        return None
+    for code, label in OCR_LANGUAGES:
+        if needle == code.casefold() or needle == label.casefold():
+            return code
+    return None
+
+
+def unknown_lang_message(value: 'str | None') -> str:
+    '''Thông báo gọn cho UI thay vì để VideOCR dump cả bảng --help như trước.'''
+    return (f'VideOCR không hỗ trợ ngôn ngữ {value!r}. Chọn một trong: '
+            f'{", ".join(language_codes())} '
+            f'(lưu ý: không có "zh" — tiếng Trung là "ch", Nhật là "japan", Hàn là "korean").')
 
 # dòng tiến trình thật của VideOCR, lấy nguyên văn từ log mẫu
 _RE_STEP1 = re.compile(r'Step\s+1/2:.*Current:\s*(\d+):(\d+):(\d+)\s*/\s*(\d+):(\d+):(\d+)', re.I)
@@ -164,7 +250,8 @@ def build_command(cli: 'str | Path', video: 'str | Path', out_srt: 'str | Path',
     '''Dựng dòng lệnh VideOCR. Hàm thuần, test được mà không cần chạy OCR.'''
     opts = opts or OcrOptions()
     cmd = [str(Path(cli)), '--video_path', str(video), '--output', str(out_srt),
-           '--lang', str(opts.lang), '--use_gpu', 'true' if opts.use_gpu else 'false']
+           '--lang', resolve_lang(opts.lang) or str(opts.lang),
+           '--use_gpu', 'true' if opts.use_gpu else 'false']
     if opts.min_subtitle_duration is not None:
         cmd += ['--min_subtitle_duration', f'{float(opts.min_subtitle_duration):g}']
     for attr, flag in (('conf_threshold', '--conf_threshold'), ('sim_threshold', '--sim_threshold'),
@@ -252,6 +339,10 @@ def run_ocr(video: 'str | Path', out_srt: 'str | Path', *,
     '''
     video = Path(video)
     out_srt = Path(out_srt)
+    # kiểm trước khi spawn: VideOCR trả lời sai ngôn ngữ bằng cả bảng --help dài,
+    # người dùng không đọc nổi dòng nào quan trọng
+    if resolve_lang((opts or OcrOptions()).lang) is None:
+        return OcrResult(False, error=unknown_lang_message((opts or OcrOptions()).lang))
     if not video.is_file():
         return OcrResult(False, error=f'Không thấy video: {video}')
     exe = find_videocr_cli(cli)
