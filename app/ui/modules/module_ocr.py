@@ -25,8 +25,14 @@ from app.ui.modules.base_module import BaseModule, TEXT_DIM
 
 LANG_LABELS = videocr_ocr.language_labels()
 DEFAULT_LANG_LABEL = videocr_ocr.label_for(videocr_ocr.DEFAULT_LANG)
-CANVAS_W = 330                 # bề rộng ô preview
-CANVAS_H = 260                 # chiều cao ô preview
+# Panel rộng ~425px ở cửa sổ mặc định (đo thật), trừ padding 2 bên còn ~404.
+# Chiều cao chặn ở 420: video dọc 9:16 (dạng Douyin) mà phóng theo bề ngang thì
+# sẽ cao ~720px, vừa vỡ hình vừa nuốt hết panel.
+DECODE_W = 404
+DECODE_H = 420
+CANVAS_MAX_H = 420
+CANVAS_MIN_W = 200
+CANVAS_MAX_W = 720
 PREVIEW_FPS = 6.0              # frame/giây của luồng giải mã trước
 MIN_EDGE_PX = 8                # vùng nhỏ hơn mức này coi như click chuột nhầm
 
@@ -64,6 +70,7 @@ class ModuleOcr(BaseModule):
         self._shown = (0, 0)
         self._src = (0, 0)
         self._index = 0
+        self._fit_w = DECODE_W             # bề rộng đã đưa vào _decode lần gần nhất
         self._playing = False
         self._tick_job = None
         self._play_base = 0
@@ -104,13 +111,17 @@ class ModuleOcr(BaseModule):
         self.lbl_status = self.status_label()
 
         self.section('Xem trước & chọn vùng')
-        self.canvas = ctk.CTkCanvas(self, width = CANVAS_W, height = CANVAS_H,
+        # KHÔNG pack(fill='x'): làm vậy canvas bị kéo rộng hơn ảnh rồi ảnh neo góc
+        # trên-trái, thành ra khung viền có khoảng chết. Để canvas đúng size ảnh thì
+        # viền ôm sát hình, và Tk tự căn giữa nó trong panel.
+        self.canvas = ctk.CTkCanvas(self, width = DECODE_W, height = DECODE_H,
                                     bg = '#141416', highlightthickness = 1,
                                     highlightbackground = '#3A3A3A')
-        self.canvas.pack(fill = 'x', padx = 10, pady = (2, 2))
+        self.canvas.pack(pady = (2, 2))
         self.canvas.bind('<ButtonPress-1>', self._drag_start)
         self.canvas.bind('<B1-Motion>', self._drag_motion)
         self.canvas.bind('<ButtonRelease-1>', self._drag_end)
+        self.bind('<Configure>', self._on_panel_resize)
         self._draw_placeholder('Đang nạp khung hình…')
 
         bar = self.row()
@@ -219,7 +230,10 @@ class ModuleOcr(BaseModule):
             self._stream.close()
         self._index = 0
         try:
-            stream = video_preview.FrameStream(video, box = (CANVAS_W, CANVAS_H),
+            # giải mã đúng bề rộng panel đang có để không phải phóng lên (mờ)
+            stream = video_preview.FrameStream(video,
+                                               box = (max(DECODE_W, self._avail_width()),
+                                                      DECODE_H),
                                                fps = PREVIEW_FPS)
             info = stream.start()
         except Exception as exc:                            # noqa: BLE001
@@ -271,25 +285,49 @@ class ModuleOcr(BaseModule):
         self._status(f'Đang giải mã preview… {ready}/{total}')
         self._poll_job = self.after(120, self._poll_stream)
 
-    def _show_index(self, index: int) -> None:
-        stream = self._stream
-        if stream is None:
-            return
-        data = stream.get(index)
-        if not data:
-            return
+    def _avail_width(self) -> int:
+        '''Bề rộng panel còn trống — canvas sẽ đúng cỡ này để viền ôm sát ảnh.'''
         try:
-            from PIL import Image, ImageTk
+            w = int(self.winfo_width() or 0)
+        except Exception:
+            w = 0
+        if w < 40:                       # chưa map: dùng cỡ đo được ở cửa sổ mặc định
+            return DECODE_W
+        return max(CANVAS_MIN_W, min(CANVAS_MAX_W, w - 22))
+
+    def _decode(self, data: bytes, width: int):
+        '''Giải mã JPEG và vừa vặn vào ô (width × CANVAS_MAX_H), không méo.
+
+        Video dọc 9:16 bị chặn bởi chiều cao chứ không phải bề ngang, nên ảnh sẽ
+        hẹp hơn panel và được căn giữa — đó là đúng, không phải lỗi còn thừa viền.
+        '''
+        try:
+            from PIL import Image
 
             img = Image.open(io.BytesIO(data))
             img.load()
+            ratio = min(1.0, width / max(1, img.width), CANVAS_MAX_H / max(1, img.height))
+            if abs(ratio - 1.0) > 0.01:
+                img = img.resize((max(16, round(img.width * ratio)),
+                                  max(16, round(img.height * ratio))), Image.LANCZOS)
+            return img
+        except Exception as exc:                            # noqa: BLE001
+            self._status(f'Lỗi hiển thị: {exc}')
+            return None
+
+    def _display(self, img, fit_w = None) -> None:
+        '''Vẽ ảnh và cho canvas co đúng theo ảnh — không còn khoảng chết trong viền.'''
+        try:
+            from PIL import ImageTk
+
             photo = ImageTk.PhotoImage(img)
         except Exception as exc:                            # noqa: BLE001
             self._status(f'Lỗi hiển thị: {exc}')
             return
-        self._index = index
         self._photo = photo
-        self._shown = (photo.width(), photo.height())
+        self._shown = (img.width, img.height)
+        self._fit_w = fit_w if fit_w is not None else self._avail_width()
+        self.canvas.configure(width = img.width, height = img.height)
         if self._img_id is None:
             self.canvas.delete('all')
             # vẽ tại (0,0) để toạ độ chuột trên canvas == toạ độ ảnh: lệch 2px cũng
@@ -299,7 +337,38 @@ class ModuleOcr(BaseModule):
             self.canvas.itemconfigure(self._img_id, image = photo)
         self.canvas.tag_raise(self._img_id)
         self._redraw_rect()
+
+    def _show_index(self, index: int) -> None:
+        stream = self._stream
+        if stream is None:
+            return
+        data = stream.get(index)
+        if not data:
+            return
+        width = self._avail_width()
+        img = self._decode(data, width)
+        if img is None:
+            return
+        self._index = index
+        self._display(img, width)
         self._update_time()
+
+    def _on_panel_resize(self, _event = None) -> None:
+        '''Đổi bề ngang cửa sổ thì vẽ lại đúng cỡ mới.
+
+        So theo `_fit_w` (bề rộng đã cho vào `_decode`) chứ không so `_shown[0]`:
+        video dọc thì ảnh hẹp hơn panel nên so với `_shown[0]` sẽ không bao giờ
+        khớp, và mỗi lần `<Configure>` lại giải mã lại — quay vòng lặp tiêu CPU.
+        '''
+        if self._stream is None or not self._shown[0]:
+            return
+        width = self._avail_width()
+        if abs(width - self._fit_w) <= 2:
+            return
+        data = self._stream.get(self._index)
+        img = self._decode(data, width) if data else None
+        if img is not None:
+            self._display(img, width)
 
     def _draw_placeholder(self, text: str) -> None:
         try:
@@ -310,8 +379,11 @@ class ModuleOcr(BaseModule):
         self._rect_id = None
         self._photo = None
         self._shown = (0, 0)
-        self.canvas.create_text(CANVAS_W // 2, CANVAS_H // 2, text = text, fill = '#6B6B6B',
-                                justify = 'center', width = CANVAS_W - 40)
+        width = self._avail_width()
+        self._fit_w = width
+        self.canvas.configure(width = width, height = 150)
+        self.canvas.create_text(width // 2, 75, text = text, fill = '#6B6B6B',
+                                justify = 'center', width = width - 40)
 
     def _update_time(self) -> None:
         stream = self._stream

@@ -189,8 +189,17 @@ def _check_preview(mod, root, video) -> list[str]:
     dw, dh = mod._shown
     sw, sh = mod._src
     print(f'  frame {dw}x{dh}px từ video {sw}x{sh}px, {info.total_frames} ảnh @ {info.fps:g}fps')
-    if dw > 330 or dh > 260:
-        fails.append(f'frame không nằm trong ô preview: {dw}x{dh}')
+    # yêu cầu của người dùng: ảnh phải lấp kín khung, không nằm gọn một góc
+    cw, ch = int(mod.canvas.cget('width')), int(mod.canvas.cget('height'))
+    if (cw, ch) != (dw, dh):
+        fails.append(f'canvas không ôm sát ảnh: canvas {cw}x{ch} còn ảnh {dw}x{dh}')
+    if mod.canvas.pack_info().get('fill') not in (None, '', 'none'):
+        fails.append(f'canvas vẫn pack(fill={mod.canvas.pack_info().get("fill")!r}) '
+                     '-> bị kéo rộng hơn ảnh')
+    # video DỌC thì ảnh hẹp hơn panel là ĐÚNG (bị chặn bởi chiều cao), nên đòi "lấp
+    # kín" phải xét theo trục nào là trục giới hạn
+    if dw < 300 and dh < 400:
+        fails.append(f'preview quá nhỏ so với panel: {dw}x{dh}')
     if abs(dw / dh - sw / sh) > 0.06:
         fails.append(f'tỉ lệ frame sai: {dw}x{dh} so với {sw}x{sh}')
     if not [i for i in mod.canvas.find_all() if str(mod.canvas.type(i)) == 'image']:
@@ -227,9 +236,12 @@ def _check_preview(mod, root, video) -> list[str]:
 
 def _check_scrub(mod, root, fails) -> None:
     '''Kéo thanh trượt phải đổi khung hình tức thì (không spawn ffmpeg mới).'''
-    target = min(30, (mod._stream.info.total_frames or 31) - 1)
-    if mod._stream.ready() <= target:
-        fails.append(f'buffer chưa tới frame {target} để test scrub')
+    total = mod._stream.info.total_frames
+    target = max(1, min(30, total - 1))
+    # ffmpeg giải mã nền: phải đợi tới đúng frame sắp dùng, nếu không phép thử
+    # "scrub có đổi ảnh không" sẽ kiểm vào chỗ trống và báo đỏ giả
+    if not _pump(root, mod, 25.0, lambda: mod._stream.ready() > target):
+        fails.append(f'buffer không tới frame {target} trong 25s (mới có {mod._stream.ready()})')
         return
     t0 = time.perf_counter()
     mod._on_scrub(target)
@@ -243,21 +255,44 @@ def _check_scrub(mod, root, fails) -> None:
 
 
 def _check_playback(mod, root, fails) -> None:
+    '''Phát phải nhích đúng fps và tự dừng khi hết — cả hai chiều đều phải kiểm.'''
+    total = mod._stream.info.total_frames
+    mod._on_scrub(0)
     mod.toggle_play()
     if not mod._playing:
         fails.append('bấm Phát mà không vào trạng thái phát')
         return
-    start = mod._index
-    _pump(root, mod, 1.0, lambda: False)
-    moved = mod._index - start
-    if moved < 3:
-        fails.append(f'phát 1 giây chỉ nhích {moved} ảnh (mong ~{int(6 * 0.8)})')
     if 'dừng' not in str(mod.btn_play.cget('text')).lower():
         fails.append(f'nút Phát không đổi nhãn khi đang phát: {mod.btn_play.cget("text")!r}')
+    _pump(root, mod, 0.6, lambda: False)
+    moved = mod._index
+    if moved < 2:
+        fails.append(f'phát 0,6 giây chỉ nhích {moved} ảnh (mong ~4)')
     mod.toggle_play()
     if mod._playing:
         fails.append('bấm lần hai mà không dừng được')
-    print(f'  phát 1s -> +{moved} ảnh')
+    if mod._tick_job is not None:
+        fails.append('dừng rồi mà còn hẹn tick tiếp')
+    print(f'  phát 0,6s -> +{moved} ảnh')
+
+    # bấm sát cuối: _tick phải tự dừng và trả nhãn về "Phát". Phải đợi ffmpeg giải
+    # mã xong toàn bộ đã, nếu không _show_index(total-2) không có frame mà bỏ qua,
+    # index đứng nguyên ở giữa video và phép thử này kiểm sai chỗ.
+    total = mod._stream.info.total_frames
+    if not _pump(root, mod, 25.0, lambda: mod._stream.ready() >= total):
+        print(f'  SKIP: buffer mới có {mod._stream.ready()}/{total} ảnh, không kiểm được cuối video')
+    else:
+        mod._on_scrub(total - 2)
+        if mod._index != total - 2:
+            fails.append(f'scrub tới cuối không ăn: index {mod._index}/{total}')
+        mod.toggle_play()
+        _pump(root, mod, 1.5, lambda: not mod._playing)
+        if mod._playing:
+            fails.append('tới cuối video mà vẫn đánh dấu đang phát')
+        if 'phát' not in str(mod.btn_play.cget('text')).lower():
+            fails.append(f'hết video nhưng nút không trở lại "Phát": {mod.btn_play.cget("text")!r}')
+        if mod._index != total - 1:
+            fails.append(f'hết video nhưng dừng ở ảnh {mod._index}/{total}')
 
 
 def main(argv=None) -> int:
