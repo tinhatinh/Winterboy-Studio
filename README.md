@@ -54,14 +54,50 @@ Hy vọng project có thể hữu ích cho anh em.
 
 ---
 
+## 📕 Cài VideOCR để dùng tính năng OCR
+
+Chức năng OCR phụ đề cứng chạy qua **VideOCR** (PaddleOCR, mã mở, giấy phép MIT) — một
+chương trình độc lập, Winterboy Studio chỉ gọi `videocr-cli.exe` của nó, nên bản phát hành
+**không kèm engine này**. Chưa cài thì vào mục OCR app sẽ báo *"Không tìm thấy
+videocr-cli.exe"*, còn lại mọi chức năng khác vẫn dùng bình thường.
+
+1. Vào <https://github.com/timminator/VideOCR/releases>, tải **một** file `.exe` cho đúng máy
+   (số liệu theo bản v1.6.0):
+
+   | Máy của bạn | File cần tải | Nặng khoảng |
+   | --- | --- | --- |
+   | Có card NVIDIA, driver còn mới | `VideOCR-GPU-v1.6.0-CUDA-12.9-setup-x64.exe` | 1,65 GB |
+   | Có card NVIDIA, driver chỉ tới CUDA 11.x | `VideOCR-GPU-v1.6.0-CUDA-11.8-setup-x64.exe` | 1,33 GB |
+   | Không có card NVIDIA | `VideOCR-CPU-v1.6.0-setup-x64.exe` | 516 MB |
+
+   Gõ `nvidia-smi` ở Command Prompt rồi nhìn cột **CUDA Version** để biết nên chọn bản CUDA
+   nào. Ưu tiên bản GPU: bản CPU chậm hơn rõ rệt, chỉ dùng khi máy không có NVIDIA.
+
+2. Cứ để thư mục cài mặc định `C:\Program Files\VideOCR` — không phải cấu hình gì thêm.
+   Studio tự dò engine theo thứ tự: biến môi trường → `C:\Program Files\VideOCR` →
+   `C:\Program Files (x86)\VideOCR` → `%LOCALAPPDATA%\Programs\VideOCR` → `PATH`.
+
+   Muốn đặt VideOCR ở chỗ khác thì khai một biến môi trường trước khi mở Studio —
+   `WINTERBOY_VIDEOCR`, `VIDEOOCR_CLI` hoặc `VIDEOOCR_HOME` — giá trị là đường dẫn tới file
+   `videocr-cli.exe` **hoặc** tới thư mục chứa nó.
+
+3. Mở Studio → mục **OCR** → chọn video. App bật CUDA theo mặc định, nên nếu bạn cài bản
+   **CPU** thì bỏ dấu chọn **"Dùng GPU (CUDA)"** trong panel OCR trước khi chạy, nếu không
+   lần OCR sẽ thất bại.
+
+VideOCR là dự án độc lập của [timminator](https://github.com/timminator/VideOCR), giấy phép
+MIT; các model OCR đi kèm do
+[PaddleOCR-Standalone](https://github.com/timminator/PaddleOCR-Standalone) cung cấp.
+
+---
+
 ## 🚀 Dành cho nhà phát triển
 
 ### Yêu cầu
 - Windows 10 / 11, Python 3.10 – 3.12 (bản phát hành dùng 3.12).
 - FFmpeg có trên `PATH` (bắt buộc để render video).
-- VideOCR (PaddleOCR) cho tính năng OCR phụ đề cứng: app tự tìm
-  `videocr-cli.exe` ở `C:\Program Files\VideOCR`, `%LOCALAPPDATA%\Programs\VideOCR`
-  hoặc `PATH`; không có thì chỉ riêng mục OCR báo lỗi, các phần khác vẫn chạy.
+- VideOCR cho riêng tính năng OCR: xem mục
+  [Cài VideOCR để dùng tính năng OCR](#-cài-videocr-để-dùng-tính-năng-ocr).
 
 `tkinter` đi kèm CPython nên không cần cài. Nhóm nặng (torch / onnxruntime cho
 ZeroTTS, demucs cho tách lời) có chú thích riêng trong `requirements.txt`.
