@@ -18,7 +18,7 @@ sys.path.insert(0, str(REPO))
 
 from app.services import videocr_ocr as vo                      # noqa: E402
 from app.services.videocr_ocr import (                          # noqa: E402
-    OcrOptions, build_command, find_videocr_cli, parse_progress, run_ocr)
+    OcrOptions, build_command, crop_from_drag, find_videocr_cli, parse_progress, run_ocr)
 
 SCRATCH = REPO / 'output' / '_restore' / 'videocr'
 ENV_KEYS = ('WINTERBOY_VIDEOCR', 'VIDEOOCR_CLI', 'VIDEOOCR_HOME')
@@ -149,8 +149,90 @@ def test_build_command_distinguishes_none_from_zero():
                                                     frames_to_skip=0,
                                                     min_subtitle_duration=None))
     assert '--time_start' not in cmd and '--min_subtitle_duration' not in cmd
-    assert cmd[cmd.index('--time_end') + 1] == '120.5'
+    # 120.5 đã được đổi sang dạng VideOCR thật sự nhận (xem test_build_command_normalizes_time_flags)
+    assert cmd[cmd.index('--time_end') + 1] == '00:02:01'
     assert cmd[cmd.index('--frames_to_skip') + 1] == '0'
+
+
+# ---------------------------------------------------------------- crop_from_drag
+# Video dọc 1080x1920, ảnh preview hiển thị 216x384 -> đúng hệ số 5 lần thu.
+SRC = (1080, 1920)
+SHOWN = (216, 384)
+
+
+def test_crop_drag_full_image_is_the_whole_frame():
+    assert crop_from_drag(0, 0, 216, 384, shown = SHOWN, source = SRC) == (0, 0, 1080, 1920)
+
+
+def test_crop_drag_scales_to_source_pixels():
+    '''Dải phụ đề cuối khung 1080x1920 ở y=1600 cao 200px -> phải ra đúng số đó.'''
+    got = crop_from_drag(0, 1600 / 5, 1080 / 5, 1800 / 5, shown = SHOWN, source = SRC)
+    assert got == (0, 1600, 1080, 200), got
+
+
+def test_crop_drag_accepts_reversed_direction():
+    '''Kéo ngược (phải-dưới -> trái-trên) vẫn phải ra w/h dương.'''
+    forward = crop_from_drag(20, 40, 120, 90, shown = SHOWN, source = SRC)
+    backward = crop_from_drag(120, 90, 20, 40, shown = SHOWN, source = SRC)
+    assert forward == backward and forward is not None
+    x, y, w, h = forward
+    assert w > 0 and h > 0
+
+
+def test_crop_drag_clamps_outside_the_canvas():
+    '''Chuột hay trượt ra ngoài mép ảnh thì vùng cũng không được vượt khung hình.'''
+    x, y, w, h = crop_from_drag(-30, -30, 9999, 9999, shown = SHOWN, source = SRC)
+    assert (x, y, w, h) == (0, 0, 1080, 1920)
+
+
+def test_crop_drag_rejects_dot_and_missing_metrics():
+    assert crop_from_drag(10, 10, 11, 11, shown = SHOWN, source = SRC) is None   # 1px trên canvas
+    assert crop_from_drag(0, 0, 10, 10, shown = (0, 0), source = SRC) is None    # chưa có ảnh
+    assert crop_from_drag(0, 0, 10, 10, shown = SHOWN, source = (0, 0)) is None  # chưa probe
+    assert crop_from_drag(0, 0, 10, 10, shown = SHOWN, source = None) is None
+
+
+def test_crop_drag_then_command_is_consistent():
+    '''Chuỗi đầu ra phải khớp lệnh VideOCR thật đã dùng khi làm video Newton.'''
+    crop = crop_from_drag(0, 320, 216, 360, shown = SHOWN, source = SRC)
+    cmd = build_command('videocr-cli.exe', 'v.mp4', 'out.srt', OcrOptions(crop = crop))
+    assert cmd[cmd.index('--crop_y') + 1] == '1600', crop
+    assert cmd[cmd.index('--crop_height') + 1] == '200', crop
+    assert '--crop_x' in cmd and '--crop_width' in cmd
+    assert '--crop_x' not in build_command('c', 'v', 'o', OcrOptions())
+
+
+# ---------------------------------------------------------------- normalize_time
+def test_normalize_time_accepts_everything_a_user_would_type():
+    '''VideOCR chỉ nhận MM:SS / HH:MM:SS, nên phải tự đổi các kiểu hay bị gõ ra.'''
+    from app.services.videocr_ocr import normalize_time as nt
+
+    assert nt(0) == '00:00:00'
+    assert nt('0') == '00:00:00'
+    assert nt('75') == '00:01:15'
+    assert nt(75.5) == '00:01:16'          # làm tròn tới giây vì engine không nhận phẩy
+    assert nt('120.5') == '00:02:01'       # round() thường cho 120 (banker's) - ở đây luôn nửa-up
+    assert nt('130.5') == '00:02:11'
+    assert nt('1:15') == '00:01:15'
+    assert nt('00:01:15') == '00:01:15'
+    assert nt(' 02:05:09 ') == '02:05:09'
+    assert nt('90:00') == '01:30:00'       # phút tràn vẫn ra giờ đúng
+    assert nt(None) is None and nt('') is None and nt('   ') is None
+    assert nt(-5) == '00:00:00'
+
+
+def test_normalize_time_leaves_nonsense_to_the_engine():
+    from app.services.videocr_ocr import normalize_time as nt
+
+    assert nt('abc') == 'abc'
+    assert nt('1:2:3:4') == '1:2:3:4'
+    assert nt('1::2') == '1::2'
+
+
+def test_build_command_normalizes_time_flags():
+    cmd = build_command('cli', 'v', 'o', OcrOptions(time_start=0, time_end='20'))
+    assert cmd[cmd.index('--time_start') + 1] == '00:00:00', cmd
+    assert cmd[cmd.index('--time_end') + 1] == '00:00:20', cmd
 
 
 # ---------------------------------------------------------------- parse_progress
@@ -203,6 +285,23 @@ def test_run_ocr_happy_path():
     assert seen and abs(seen[-1][0] - 1.0) < 1e-9
     assert any('OCR ảnh 4/4' in s[1] for s in seen)
     assert out.is_file()
+
+
+def test_run_ocr_resolves_relative_paths():
+    '''Đường dẫn tương đối phải được phân giải TRƯỚC khi spawn VideOCR.
+
+    Popen chạy với cwd = thư mục cài VideOCR, nên đưa `output/x.srt` vào là engine
+    ghi file ở chỗ khác, còn code đi kiểm tra thì nhìn chỗ cũ -> "chạy xong nhưng
+    không có file SRT". Lỗi này chỉ lộ khi gọi từ CLI, UI luôn đưa đường dẫn tuyệt
+    đối nên không thấy gì.
+    '''
+    out = _scratch('rel.srt')
+    rel = out.relative_to(REPO)
+    assert not rel.is_absolute()
+    r = run_ocr(_video(), rel, cli=_fake_cli())
+    assert r.ok, r.error
+    assert out.is_file(), 'file nằm ở chỗ khác chỗ đã báo'
+    assert r.srt_path == out.resolve()
 
 
 def test_run_ocr_nonzero_exit_keeps_tail():

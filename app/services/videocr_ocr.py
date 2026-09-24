@@ -73,6 +73,34 @@ class OcrResult:
         return len(self.cues)
 
 
+def crop_from_drag(x0: float, y0: float, x1: float, y1: float, *,
+                   shown: 'tuple[int, int]', source: 'tuple[int, int]',
+                   min_edge: int = 8) -> 'tuple[int, int, int, int] | None':
+    '''Biến hình chữ nhật người dùng kéo trên ảnh preview thành crop cho VideOCR.
+
+    Ảnh preview luôn nhỏ hơn video thật, nên toạ độ phải đổi sang pixel GỐC —
+    ``--crop_x/y/width/height`` của VideOCR tính theo khung hình gốc. Trả về None
+    khi thiếu số đo hoặc khi người dùng chỉ click nhầm (bé hơn ``min_edge``), để
+    UI phân biệt "không chọn vùng" với "chọn sai".
+    '''
+    sw, sh = (int(source[0]), int(source[1])) if source and len(source) >= 2 else (0, 0)
+    dw, dh = (int(shown[0]), int(shown[1])) if shown and len(shown) >= 2 else (0, 0)
+    if not (dw and dh and sw and sh):
+        return None
+
+    def span(a, b, limit, total):
+        lo, hi = sorted((float(a), float(b)))
+        lo = min(max(lo, 0.0), limit)
+        hi = min(max(hi, 0.0), limit)
+        return int(round(lo * total / limit)), int(round(hi * total / limit))
+
+    ax, bx = span(x0, x1, dw, sw)
+    ay, by = span(y0, y1, dh, sh)
+    if bx - ax < min_edge or by - ay < min_edge:
+        return None
+    return (ax, ay, bx - ax, by - ay)
+
+
 def find_videocr_cli(explicit: 'str | Path | None' = None) -> 'Path | None':
     '''Tìm videocr-cli.exe: chỉ định > biến môi trường > thư mục cài đặt > PATH.'''
     candidates: list[Path] = []
@@ -98,6 +126,39 @@ def find_videocr_cli(explicit: 'str | Path | None' = None) -> 'Path | None':
     return None
 
 
+def normalize_time(value: 'str | float | int | None') -> 'str | None':
+    '''Về dạng HH:MM:SS mà VideOCR chấp nhận.
+
+    ``--time_start`` của engine chỉ nhận MM:SS hoặc HH:MM:SS — truyền ``0`` hay
+    ``75`` (rất tự nhiên khi muốn cắt theo giây) thì argparse của nó báo lỗi nguyên
+    văn cả bảng help, người dùng không hiểu gì. Ở đây nhận hết: ``75``, ``75.5``,
+    ``1:15``, ``00:01:15`` -> ``00:01:15``.
+    '''
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if ':' in text:
+        parts = [p.strip() for p in text.split(':')]
+        if not all(re.fullmatch(r'\d+(\.\d+)?', p) for p in parts) or len(parts) > 3:
+            return text                                  # để engine tự báo lỗi, không đoán
+        seconds = 0.0
+        for part in parts:
+            seconds = seconds * 60 + float(part)
+    else:
+        if not re.fullmatch(r'-?\d+(\.\d+)?', text):
+            return text
+        seconds = float(text)
+    seconds = max(0.0, seconds)
+    # round() của Python là banker's rounding (120.5 -> 120, 130.5 -> 130) nên tự làm
+    # tròn lên nửa đơn vị: người gõ "90.5" phải luôn nhận 00:01:31, không phụ thuộc
+    # chẵn lẻ của giây.
+    h, rem = divmod(int(seconds + 0.5), 3600)
+    m, s = divmod(rem, 60)
+    return f'{h:02d}:{m:02d}:{s:02d}'
+
+
 def build_command(cli: 'str | Path', video: 'str | Path', out_srt: 'str | Path',
                   opts: 'OcrOptions | None' = None) -> 'list[str]':
     '''Dựng dòng lệnh VideOCR. Hàm thuần, test được mà không cần chạy OCR.'''
@@ -110,7 +171,11 @@ def build_command(cli: 'str | Path', video: 'str | Path', out_srt: 'str | Path',
                        ('max_merge_gap', '--max_merge_gap'), ('frames_to_skip', '--frames_to_skip'),
                        ('time_start', '--time_start'), ('time_end', '--time_end')):
         value = getattr(opts, attr)
-        if value is not None:
+        if value is None:
+            continue
+        if attr in ('time_start', 'time_end'):
+            cmd += [flag, normalize_time(value)]
+        else:
             cmd += [flag, f'{value:g}' if isinstance(value, float) else str(value)]
     if opts.crop:
         x, y, w, h = (int(v) for v in opts.crop)
@@ -194,6 +259,16 @@ def run_ocr(video: 'str | Path', out_srt: 'str | Path', *,
         return OcrResult(False, error='Không tìm thấy videocr-cli.exe. Cài VideOCR hoặc trỏ '
                                       'biến môi trường WINTERBOY_VIDEOCR tới thư mục cài.')
 
+    # Popen chạy với cwd = thư mục của VideOCR, nên đường dẫn tương đối của người
+    # dùng sẽ bị tính từ "C:\Program Files\VideOCR" — phải absolute hoá trước.
+    try:
+        video = video.resolve()
+    except OSError:
+        pass
+    try:
+        out_srt = out_srt.resolve()
+    except OSError:
+        pass
     out_srt.parent.mkdir(parents=True, exist_ok=True)
     cmd = build_command(exe, video, out_srt, opts)
     logger.info('OCR: %s', ' '.join(cmd[:6]) + ' ...')
