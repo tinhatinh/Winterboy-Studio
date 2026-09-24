@@ -54,15 +54,6 @@ Hy vọng project có thể hữu ích cho anh em.
 
 ---
 
-## 📥 Tải về và sử dụng ngay (Không cần cài đặt)
-Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ cần tải bản đóng gói sẵn (.exe) và sử dụng ngay:
-1. Nhấn vào mục **[Releases]** ở menu bên phải của trang GitHub này (hoặc biểu tượng tag).
-2. Tải về file `WinterboyStudio_OpenSource_Release.zip`.
-3. Giải nén ra một thư mục bất kỳ.
-4. Chạy file `WinterboyStudio.exe` để bắt đầu làm việc!
-
----
-
 ## 🚀 Dành cho nhà phát triển
 
 ### Yêu cầu
@@ -72,13 +63,6 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
   `videocr-cli.exe` ở `C:\Program Files\VideOCR`, `%LOCALAPPDATA%\Programs\VideOCR`
   hoặc `PATH`; không có thì chỉ riêng mục OCR báo lỗi, các phần khác vẫn chạy.
 
-### Chạy thử
-```bash
-git clone https://github.com/tinhatinh/Winterboy-Studio.git
-cd Winterboy-Studio
-pip install -r requirements.txt
-python main.py
-```
 `tkinter` đi kèm CPython nên không cần cài. Nhóm nặng (torch / onnxruntime cho
 ZeroTTS, demucs cho tách lời) có chú thích riêng trong `requirements.txt`.
 
