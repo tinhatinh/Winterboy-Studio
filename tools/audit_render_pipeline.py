@@ -199,8 +199,13 @@ def main(argv=None):
             print(f'  fps/speed dạng nhãn: từ chối ngay ({type(exc).__name__}) — an toàn')
 
         if not args.keep:
+            # Windows có thể còn giữ tay nắm file vừa ffprobe xong. Xoá được thì xoá,
+            # không thì để rmtree ở finally dọn — không tính đây là audit hỏng.
             for f in work.glob('*.mp4'):
-                f.unlink(missing_ok=True)
+                try:
+                    f.unlink(missing_ok=True)
+                except PermissionError:
+                    print(f'  (để lại {f.name}: Windows còn mở file)')
         else:
             print(f'  giữ file ở {work}')
     except AssertionError as exc:
