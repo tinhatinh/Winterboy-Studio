@@ -4,27 +4,36 @@
 Khác với nhận diện giọng nói: OCR lấy đúng nguyên văn chữ đang hiện trên hình, nên
 tên riêng và thuật ngữ không bị nghe sai (伯努利 -> Bernoulli, không phải "Fourier").
 
-Có ô xem trước khung hình để KÉO CHUỘT khoanh vùng phụ đề: VideOCR chỉ đọc chữ nằm
-trong crop rect, nên khoanh đúng dải sub thì logo/credit đè ngang không bị nhận
-luôn thành chữ.
+Phần xem trước đi theo đúng kiểu cửa sổ VideOCR: có khung hình chạy được, thanh
+trượt thời gian bên dưới, và kéo chuột ngay trên ảnh để khoanh vùng phụ đề — vì
+VideOCR chỉ đọc chữ nằm trong crop rect, khoanh đúng dải sub thì logo/credit đè
+ngang không bị nhận luôn thành chữ.
 '''
 from __future__ import annotations
 
+import io
 import queue
-import tempfile
 import threading
+import time
 from pathlib import Path
 from tkinter import filedialog
 
 import customtkinter as ctk
 from app.core.state import AppState
-from app.services import videocr_ocr
+from app.services import videocr_ocr, video_preview
 from app.ui.modules.base_module import BaseModule, TEXT_DIM
 
 LANGS = ('ch', 'zh', 'en', 'vi', 'ja', 'ko', 'th', 'id', 'pt', 'es', 'fr', 'de')
-CANVAS_H = 300                 # chiều cao tối đa của ô preview
-CANVAS_W = 330                 # bề rộng mong muốn; panel có hẹp hơn thì ảnh co theo
+CANVAS_W = 330                 # bề rộng ô preview
+CANVAS_H = 260                 # chiều cao ô preview
+PREVIEW_FPS = 6.0              # frame/giây của luồng giải mã trước
 MIN_EDGE_PX = 8                # vùng nhỏ hơn mức này coi như click chuột nhầm
+
+
+def _fmt_s(seconds: float) -> str:
+    seconds = max(0.0, float(seconds or 0))
+    m, s = divmod(int(seconds), 60)
+    return f'{m:02d}:{s:02d}'
 
 
 class ModuleOcr(BaseModule):
@@ -45,24 +54,31 @@ class ModuleOcr(BaseModule):
         self.var_gpu = ctk.BooleanVar(value=True)
         self.var_min = ctk.StringVar(value='0.3')
         self.var_out = ctk.StringVar(value='')
-        self.var_t = ctk.StringVar(value='1.0')
         self.var_use_region = ctk.BooleanVar(value=False)
 
-        # ảnh preview + vùng đã kéo. region luôn tính bằng pixel GỐC của video,
-        # không phụ thuộc ảnh preview to hay nhỏ.
+        # preview
+        self._stream: video_preview.FrameStream | None = None
         self._photo = None
-        self._frame_path: Path | None = None
         self._img_id = None
         self._shown = (0, 0)
         self._src = (0, 0)
-        self._rect_id = None
+        self._index = 0
+        self._playing = False
+        self._tick_job = None
+        self._play_base = 0
+        self._play_t0 = 0.0
+        self._poll_job = None
         self._drag = None
+        self._rect_id = None
         self.region: 'tuple[int, int, int, int] | None' = None
         # bốn ô số là nguồn sự thật lúc chạy: kéo chuột chỉ là cách nhanh để điền chúng
         self.vars_crop = [ctk.StringVar(value='') for _ in range(4)]
 
         self._build_ui()
         self.sync_from_state()
+        self.bind('<Destroy>', self._on_destroy, add='+')
+        # mở thẻ là tự nạp preview, không bắt người dùng bấm thêm nút nào
+        self.after(120, self._autoload)
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
@@ -84,16 +100,25 @@ class ModuleOcr(BaseModule):
         self.lbl_status = self.status_label()
 
         self.section('Xem trước & chọn vùng')
-        self.field('Giây', lambda parent: ctk.CTkEntry(parent, textvariable = self.var_t, width = 64),
-                   trailing = lambda parent: ctk.CTkButton(parent, text = 'Nạp preview',
-                                                            command = self.load_frame))
-        self.canvas = ctk.CTkCanvas(self, width = CANVAS_W, height = 200, bg = '#1B1B1D',
-                                    highlightthickness = 1, highlightbackground = '#3A3A3A')
-        self.canvas.pack(fill = 'x', padx = 10, pady = (2, 4))
+        self.canvas = ctk.CTkCanvas(self, width = CANVAS_W, height = CANVAS_H,
+                                    bg = '#141416', highlightthickness = 1,
+                                    highlightbackground = '#3A3A3A')
+        self.canvas.pack(fill = 'x', padx = 10, pady = (2, 2))
         self.canvas.bind('<ButtonPress-1>', self._drag_start)
         self.canvas.bind('<B1-Motion>', self._drag_motion)
         self.canvas.bind('<ButtonRelease-1>', self._drag_end)
-        self.canvas.bind('<Configure>', self._on_resize)
+        self._draw_placeholder('Đang nạp khung hình…')
+
+        bar = self.row()
+        self.btn_play = ctk.CTkButton(bar, text = '▶  Phát', width = 74,
+                                      command = self.toggle_play)
+        self.btn_play.pack(side = 'left')
+        self.lbl_time = ctk.CTkLabel(bar, text = '00:00 / 00:00', width = 104)
+        self.lbl_time.pack(side = 'right')
+        self.slider = ctk.CTkSlider(bar, from_ = 0, to = 1, number_of_steps = 1,
+                                    command = self._on_scrub)
+        self.slider.pack(side = 'left', fill = 'x', expand = True, padx = 6)
+
         self.checks([('Chỉ OCR vùng đã khoanh (bỏ chọn = nguyên khung hình)', self.var_use_region)])
         # kéo chuột chỉ là cách nhanh; 4 ô này mới là giá trị thật sự gửi cho VideOCR,
         # vì ảnh preview bị thu nhỏ nên kéo không thể chính xác từng pixel
@@ -101,14 +126,14 @@ class ModuleOcr(BaseModule):
                           ('Rộng', self.vars_crop[2]), ('Cao', self.vars_crop[3])],
                          columns = 2, on_commit = self._crop_from_fields)
         self.button_grid([
-            ('Nạp lại', self.load_frame, { }),
+            ('Nạp lại', self.load_preview, { }),
             ('Xoá vùng', self.clear_region, { })])
-        self.lbl_region = self.hint('chưa có ảnh — bấm “Nạp preview” rồi kéo chuột lên dải phụ đề.')
+        self.lbl_region = self.hint('Kéo chuột lên khung hình để khoanh dải phụ đề.')
 
         self.section('Kết quả')
         self.stack('File .srt', lambda parent: ctk.CTkEntry(
             parent, textvariable = self.var_out, placeholder_text = 'chưa chạy OCR'))
-        self.text = ctk.CTkTextbox(self, height = 180, wrap = 'none',
+        self.text = ctk.CTkTextbox(self, height = 170, wrap = 'none',
                                    font = ctk.CTkFont(family = 'Consolas', size = 12))
         self.text.pack(fill = 'both', expand = False, padx = 10, pady = (0, 8))
         self.text.configure(state = 'disabled')
@@ -130,7 +155,8 @@ class ModuleOcr(BaseModule):
         if not (current and Path(current).is_file()):
             return
         if current != self.var_video.get():
-            self.reset_preview()             # ảnhpreview cũ là của video khác
+            self.reset_preview()             # ảnh preview cũ là của video khác
+            self.load_preview()
         self.var_video.set(current)
         if not self.var_out.get():
             self.var_out.set(str(Path(current).with_suffix('.ocr.srt')))
@@ -139,11 +165,12 @@ class ModuleOcr(BaseModule):
         path = filedialog.askopenfilename(
             title = 'Chọn video cần OCR',
             filetypes = [('Video', '*.mp4 *.mov *.mkv *.avi *.webm'), ('Tất cả', '*.*')])
-        if path:
-            self.reset_preview()
+        if path and path != self.var_video.get():
             self.var_video.set(path)
             if not self.var_out.get():
                 self.var_out.set(str(Path(path).with_suffix('.ocr.srt')))
+            self.reset_preview()
+            self.load_preview()
 
     def refresh_engine(self) -> None:
         exe = videocr_ocr.find_videocr_cli(getattr(self.state, 'videocr_cli_path', None))
@@ -158,101 +185,214 @@ class ModuleOcr(BaseModule):
             pass
 
     # ------------------------------------------------------------- preview
-    def load_frame(self) -> None:
-        '''Xuất một khung hình bằng ffmpeg rồi vẽ lên canvas (nền, không đơ UI).'''
-        if self._worker and self._worker.is_alive():
-            self._status('Đang có việc chạy, đợi chút.')
+    def _autoload(self) -> None:
+        if not self.winfo_exists():
             return
+        if self._stream is None and Path(self.var_video.get() or '').is_file():
+            self.load_preview()
+
+    def load_preview(self) -> None:
+        '''Spawn một ffmpeg duy nhất giải mã cả video; từ đó scrub là ăn ngay.'''
         video = Path(self.var_video.get() or '')
         if not video.is_file():
             self._status('Chọn video trước đã.')
+            self._draw_placeholder('Chưa có video — chọn ở mục "Video cần OCR"')
             return
+        self._stop_playback()
+        if self._stream is not None:
+            self._stream.close()
+        self._index = 0
         try:
-            at_s = max(0.0, float(self.var_t.get() or 0))
-        except ValueError:
-            self._status('Ô "Giây" phải là số, vd 1.0')
+            stream = video_preview.FrameStream(video, box = (CANVAS_W, CANVAS_H),
+                                               fps = PREVIEW_FPS)
+            info = stream.start()
+        except Exception as exc:                            # noqa: BLE001
+            self._status(f'Lỗi preview: {exc}')
+            self._draw_placeholder('Lỗi khi mở video')
             return
-        self._status('Đang lấy khung hình…')
-        self._worker = threading.Thread(target = self._work_frame, args = (video, at_s),
-                                        daemon = True)
-        self._worker.start()
-        self.after(80, self._pump)
-
-    def _work_frame(self, video: Path, at_s: float) -> None:
-        '''Chạy ở thread nền — KHÔNG gọi widget hay self.after từ đây.'''
+        if not info.width:
+            self._status('Không đọc được kích thước video.')
+            self._draw_placeholder('Không đọc được video')
+            return
+        self._stream = stream
+        self._src = (info.width, info.height)
+        total = max(1, info.total_frames)
         try:
-            # dùng đúng hàm của app để không nhân bản logic ffmpeg ra hai nơi
-            from app.services.media_probe import probe_video_size
-            from app.ui.widgets.blur_region_editor import extract_video_frame
+            self.slider.configure(to = total - 1, number_of_steps = max(1, total - 1))
+        except Exception:
+            pass
+        self._update_time()
+        self._status(f'Đang giải mã preview… (fps {info.fps:g}, {info.total_frames} ảnh)')
+        if self._poll_job is not None:
+            try:
+                self.after_cancel(self._poll_job)
+            except Exception:
+                pass
+        self._poll_job = self.after(60, self._poll_stream)
 
-            out = Path(tempfile.gettempdir()) / 'winterboy_ocr_preview.jpg'
-            if not extract_video_frame(video, out, t_s = at_s) or not out.is_file():
-                self._q.put(('frame', None, 'ffmpeg không xuất được khung hình'))
-                return
-            self._q.put(('frame', (out, tuple(probe_video_size(video) or ( ))), None))
-        except BaseException as exc:                       # noqa: BLE001
-            self._q.put(('frame', None, f'{type(exc).__name__}: {exc}'))
-
-    def _show_frame(self, payload, error) -> None:
-        if error or not payload:
-            self._status(f'Lỗi preview: {error or "không rõ"}')
+    def _poll_stream(self) -> None:
+        stream = self._stream
+        if stream is None or not self.winfo_exists():
             return
-        out, src = payload
-        width = max(120, min(CANVAS_W, self.canvas.winfo_width() or CANVAS_W))
-        img = self._open_scaled(out, width)
-        if img is None:
+        ready = stream.ready()
+        if ready:
+            want = min(self._index, ready - 1)
+            if want != self._index:
+                self._index = want
+            self._show_index(self._index)
+        if stream.error:
+            self._status(f'Lỗi preview: {stream.error}')
+            self._draw_placeholder('ffmpeg không mở được video')
             return
-        self._frame_path = out
-        self._src = (int(src[0]), int(src[1])) if len(src) >= 2 and src[0] and src[1] else (0, 0)
-        if not self._src[0]:
-            from app.services.media_probe import probe_video_size
-            self._src = tuple(probe_video_size(Path(self.var_video.get() or '')) or (0, 0))
-        self._paint(img)
-        self._status('Kéo chuột lên ảnh để khoanh đúng dải phụ đề.')
-        self._report_region()
+        if ready >= (stream.info.total_frames if stream.info else 0) or stream.exhausted:
+            self._poll_job = None
+            if self._playing:
+                self._status('Đang phát…')
+            else:
+                self._status(f'Preview sẵn sàng: {ready} ảnh')
+            return
+        total = stream.info.total_frames if stream.info else 0
+        self._status(f'Đang giải mã preview… {ready}/{total}')
+        self._poll_job = self.after(120, self._poll_stream)
 
-    def _open_scaled(self, path: Path, width: int):
-        '''Mở JPEG preview và co về vừa ô canvas (both chiều), giữ nguyên tỉ lệ.'''
+    def _show_index(self, index: int) -> None:
+        stream = self._stream
+        if stream is None:
+            return
+        data = stream.get(index)
+        if not data:
+            return
         try:
             from PIL import Image, ImageTk
 
-            img = Image.open(path)
-            ratio = min(1.0, width / max(1, img.width), CANVAS_H / max(1, img.height))
-            img = img.resize((max(1, int(img.width * ratio)), max(1, int(img.height * ratio))),
-                             Image.LANCZOS)
-            return ImageTk.PhotoImage(img), (img.width, img.height)
+            img = Image.open(io.BytesIO(data))
+            img.load()
+            photo = ImageTk.PhotoImage(img)
         except Exception as exc:                            # noqa: BLE001
-            self._status(f'Lỗi hiển thị preview: {exc}')
-            return None
-
-    def _paint(self, painted) -> None:
-        photo, (w, h) = painted
+            self._status(f'Lỗi hiển thị: {exc}')
+            return
+        self._index = index
         self._photo = photo
-        self._shown = (w, h)
-        self.canvas.delete('all')
-        self._img_id = self.canvas.create_image(0, 0, anchor = 'nw', image = self._photo)
-        self._rect_id = None
+        self._shown = (photo.width(), photo.height())
+        if self._img_id is None:
+            self.canvas.delete('all')
+            # vẽ tại (0,0) để toạ độ chuột trên canvas == toạ độ ảnh: lệch 2px cũng
+            # làm crop dịch ~16px theo video, đủ để xén mất hàng chữ trên cùng
+            self._img_id = self.canvas.create_image(0, 0, anchor = 'nw', image = photo)
+        else:
+            self.canvas.itemconfigure(self._img_id, image = photo)
+        self.canvas.tag_raise(self._img_id)
         self._redraw_rect()
+        self._update_time()
 
-    def reset_preview(self) -> None:
-        '''Quên ảnh + vùng đang chọn (đổi video thì không dùng lại được nữa).'''
-        self.region = None
-        self._set_fields(None)
-        self._photo = None
-        self._frame_path = None
-        self._shown = (0, 0)
-        self._src = (0, 0)
-        self._img_id = None
-        self._rect_id = None
+    def _draw_placeholder(self, text: str) -> None:
         try:
             self.canvas.delete('all')
         except Exception:
+            return
+        self._img_id = None
+        self._rect_id = None
+        self._photo = None
+        self._shown = (0, 0)
+        self.canvas.create_text(CANVAS_W // 2, CANVAS_H // 2, text = text, fill = '#6B6B6B',
+                                justify = 'center', width = CANVAS_W - 40)
+
+    def _update_time(self) -> None:
+        stream = self._stream
+        if not stream or not stream.info:
+            self._set_text(self.lbl_time, '00:00 / 00:00')
+            return
+        cur = stream.seconds_for(self._index)
+        end = stream.info.duration_s or stream.seconds_for(max(0, stream.info.total_frames - 1))
+        self._set_text(self.lbl_time, f'{_fmt_s(cur)} / {_fmt_s(end)}')
+
+    # ------------------------------------------------------------- phát lại
+    def toggle_play(self) -> None:
+        if self._playing:
+            self._stop_playback()
+            return
+        stream = self._stream
+        if stream is None:
+            self._status('Chưa có preview để phát.')
+            return
+        if stream.ready() == 0:
+            self._status('Preview đang giải mã, đợi thêm giây.')
+            self._poll_stream()
+            return
+        self._playing = True
+        self._play_base = self._index
+        self._play_t0 = time.perf_counter()
+        try:
+            self.btn_play.configure(text = '⏸  Tạm dừng')
+        except Exception:
             pass
-        self._report_region()
+        self._schedule_tick()
+
+    def _schedule_tick(self) -> None:
+        self._tick_job = self.after(max(16, int(1000 / PREVIEW_FPS)), self._tick)
+
+    def _tick(self) -> None:
+        if not self._playing or self._stream is None or not self.winfo_exists():
+            return
+        stream = self._stream
+        total = stream.info.total_frames if stream.info else 0
+        # index tính theo ĐỒNG HỒ thật, không theo số lần tick: callback `after` của
+        # Tk bị trễ khi event loop bận, mà đếm tick thì phim mỗi lúc một chạy chậm
+        target = self._play_base + int((time.perf_counter() - self._play_t0) * PREVIEW_FPS)
+        if total and target >= total:
+            self._show_index(total - 1)
+            self._stop_playback()
+            self._status('Hết preview.')
+            return
+        if target < 0:
+            target = 0
+        if stream.get(target) is None:
+            # ffmpeg chưa giải mã tới đây: giữ khung hình cũ và chỉnh lại mốc thời
+            # gian để không bị "nợ" khung hình, chạy tiếp khi buffer theo kịp
+            self._play_base = self._index
+            self._play_t0 = time.perf_counter()
+            self._status('đang chờ giải mã…')
+            self._schedule_tick()
+            return
+        if target != self._index:
+            self._show_index(target)
+            try:
+                self.slider.set(target)
+            except Exception:
+                pass
+        self._schedule_tick()
+
+    def _stop_playback(self) -> None:
+        self._playing = False
+        if self._tick_job is not None:
+            try:
+                self.after_cancel(self._tick_job)
+            except Exception:
+                pass
+            self._tick_job = None
+        try:
+            self.btn_play.configure(text = '▶  Phát')
+        except Exception:
+            pass
+
+    def _on_scrub(self, value) -> None:
+        '''Kéo thanh trượt: chỉ đổi index trong bộ nhớ đã giải mã nên không delay.'''
+        try:
+            index = int(float(value))
+        except (TypeError, ValueError):
+            return
+        if self._stream is not None:
+            self._show_index(index)
+            if self._playing:
+                # vừa nhảy tới chỗ khác thì đặt lại mốc, không để _tick kéo về
+                # đoạn cũ theo đồng hồ cũ
+                self._play_base = index
+                self._play_t0 = time.perf_counter()
 
     # ------------------------------------------------------------ kéo chuột
     def _drag_start(self, event) -> None:
         if not self._photo:
+            self._status('Chưa có khung hình để khoanh.')
             return
         self._drag = (event.x, event.y)
         if self._rect_id is not None:
@@ -281,6 +421,7 @@ class ModuleOcr(BaseModule):
                 self.canvas.delete(self._rect_id)
                 self._rect_id = None
             self.region = None
+            self._set_fields(None)
             self._set_text(self.lbl_region, f'Vùng quá nhỏ (tối thiểu {MIN_EDGE_PX}px) — kéo to hơn.')
             return
         # Tk không hứa có một lần <B1-Motion> cuối trước khi nhả chuột, nên ô vẽ phải
@@ -329,9 +470,8 @@ class ModuleOcr(BaseModule):
                     self.canvas.delete(self._rect_id)
                 except Exception:
                     pass
-            self._rect_id = None
-            if self.region:
-                self._redraw_rect()
+                self._rect_id = None
+            self._redraw_rect()
         self._report_region()
 
     def clear_region(self) -> None:
@@ -345,28 +485,24 @@ class ModuleOcr(BaseModule):
             self._rect_id = None
         self._report_region()
 
-    def _on_resize(self, _event = None) -> None:
-        '''Panel co/giãn thì vẽ lại ảnh theo bề rộng mới; vùng kéo quy về gốc nên không lệch.'''
-        if not self._frame_path:
-            return
-        width = max(120, min(CANVAS_W, self.canvas.winfo_width() or 0))
-        if abs(width - self._shown[0]) <= 2:
-            return
-        painted = self._open_scaled(self._frame_path, width)
-        if painted:
-            self._paint(painted)
-
     def _redraw_rect(self) -> None:
-        if not self.region:
-            return
         sw, sh = self._src
         dw, dh = self._shown
-        if not (sw and sh and dw and dh):
+        crop = self.typed_crop()
+        self.region = crop
+        if self._rect_id is not None:
+            try:
+                self.canvas.delete(self._rect_id)
+            except Exception:
+                pass
+            self._rect_id = None
+        if not (crop and sw and sh and dw and dh):
             return
-        x, y, w, h = self.region
+        x, y, w, h = crop
         self._rect_id = self.canvas.create_rectangle(x * dw / sw, y * dh / sh,
                                                      (x + w) * dw / sw, (y + h) * dh / sh,
                                                      outline = '#F0A020', width = 2, dash = (5, 3))
+        self.canvas.tag_raise(self._rect_id)
 
     def _report_region(self) -> None:
         crop = self.typed_crop()
@@ -380,16 +516,44 @@ class ModuleOcr(BaseModule):
                        f'vùng gốc: x={x} y={y} {w}×{h}px{note}'
                        + ('  ⚠ tràn ra ngoài khung hình' if outside else ''))
 
+    def reset_preview(self) -> None:
+        '''Quên ảnh + vùng đang chọn (đổi video thì không dùng lại được nữa).'''
+        self._stop_playback()
+        if self._stream is not None:
+            self._stream.close()
+            self._stream = None
+        self.region = None
+        self._set_fields(None)
+        self._src = (0, 0)
+        self._index = 0
+        self._draw_placeholder('Đang nạp khung hình…')
+
+    def _on_destroy(self, _event = None) -> None:
+        self._stop_playback()
+        if self._poll_job is not None:
+            try:
+                self.after_cancel(self._poll_job)
+            except Exception:
+                pass
+            self._poll_job = None
+        if self._stream is not None:
+            self._stream.close()
+            self._stream = None
+
+    def on_tab_deactivated(self) -> None:
+        '''ControlPanel gọi khi chuyển sang thẻ khác: dừng phát cho đỡ tốn CPU.'''
+        self._stop_playback()
+
+    # ---------------------------------------------------------------- chạy
     def current_crop(self) -> 'tuple[int, int, int, int] | None':
         '''Vùng thực sự truyền cho VideOCR; None là OCR cả khung hình.'''
         if not self.var_use_region.get():
             return None
         return self.typed_crop()
 
-    # ---------------------------------------------------------------- chạy
     def run_ocr(self) -> None:
         if self._worker and self._worker.is_alive():
-            self._status('OCR/preview đang chạy, đợi hoặc bấm Dừng.')
+            self._status('OCR đang chạy, đợi hoặc bấm Dừng.')
             return
         video = Path(self.var_video.get() or '')
         if not video.is_file():
@@ -403,12 +567,13 @@ class ModuleOcr(BaseModule):
             return
         crop = self.current_crop()
         if self.var_use_region.get() and not crop:
-            self._status('Bật "chỉ OCR vùng" mà chưa khoanh — nạp preview rồi kéo chuột.')
+            self._status('Bật "chỉ OCR vùng" mà chưa khoanh — kéo chuột lên preview hoặc nhập 4 ô.')
             return
 
         opts = videocr_ocr.OcrOptions(lang = self.var_lang.get() or 'ch',
                                       use_gpu = bool(self.var_gpu.get()),
                                       min_subtitle_duration = min_dur, crop = crop)
+        self._stop_playback()
         self._cancel.clear()
         self.text.configure(state = 'normal')
         self.text.delete('1.0', 'end')
@@ -436,8 +601,6 @@ class ModuleOcr(BaseModule):
                 item = self._q.get_nowait()
                 if item[0] == 'tick':
                     self._progress(item[1], item[2])
-                elif item[0] == 'frame':
-                    self._show_frame(item[1], item[2])
                 elif item[0] == 'crash':
                     self._status(f'Lỗi: {item[1]}')
                 elif item[0] == 'done':

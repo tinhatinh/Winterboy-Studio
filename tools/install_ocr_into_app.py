@@ -24,6 +24,7 @@ SHORTCUT = DESKTOP / 'Winterboy OCR.lnk'
 # (nguồn trong repo, đích trong app)
 FILES = [
     (REPO / 'app/services/videocr_ocr.py', APP / '_internal/app/services/videocr_ocr.py'),
+    (REPO / 'app/services/video_preview.py', APP / '_internal/app/services/video_preview.py'),
     (REPO / 'app/ui/modules/module_ocr.py', APP / '_internal/app/ui/modules/module_ocr.py'),
     # control_panel.py đã được khôi phục khớp bytecode 100% với bản phát hành, chỉ
     # chênh đúng 5 chỗ của tính năng OCR (xem `compare_bytecode`), nên thả vào app
