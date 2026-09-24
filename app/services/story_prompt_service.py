@@ -36,17 +36,13 @@ def _call_gemini_json(system_prompt, user_content = None, keys = None, key_idx =
     '''Gửi yêu cầu tới Gemini API với chế độ xoay vòng API Keys và tự động parse JSON.'''
     if not keys:
         raise ValueError('Không có API Key Gemini khả dụng.')
-    if not model:
-        model
-    primary_model = normalize_gemini_model('gemini-2.5-flash')
+    primary_model = normalize_gemini_model(model or 'gemini-2.5-flash')
     fallback_models = [
         primary_model,
         'gemini-2.5-flash',
         'gemini-2.5-flash-lite',
         'gemini-2.0-flash']
-    if not model:
-        model
-    primary_model = normalize_gemini_model('gemini-flash-latest')
+    primary_model = normalize_gemini_model(model or 'gemini-flash-latest')
     fallback_models = [
         primary_model,
         'gemini-flash-latest',
@@ -57,29 +53,21 @@ def _call_gemini_json(system_prompt, user_content = None, keys = None, key_idx =
 
 def build_visual_continuity_bible(script_text = None, master_prompt = None, keys = None, model = ('', None, 'gemini-2.5-flash')):
     '''Phân tích câu chuyện để xây dựng Kinh Thánh Tạo Hình (Era, Art Style, Characters & Signature Costumes).'''
-    if not keys:
-        keys
-    key_pool = get_gemini_keys_pool()
+    key_pool = keys or get_gemini_keys_pool()
     if not key_pool:
         raise ValueError('Chưa cấu hình API Key Gemini nào.')
-    if not master_prompt:
-        master_prompt
-    user_content = f'''MASTER PROMPT GỢI Ý:\n{'Cinematic visual storytelling, photorealistic 8k'}\n\nTOÀN BỘ KỊCH BẢN CÂU CHUYỆN:\n{script_text[:12000]}'''
+    user_content = f'''MASTER PROMPT GỢI Ý:\n{master_prompt or "Cinematic visual storytelling, photorealistic 8k"}\n\nTOÀN BỘ KỊCH BẢN CÂU CHUYỆN:\n{script_text[:12000]}'''
     (parsed, _) = _call_gemini_json(system_prompt = SYSTEM_VISUAL_BIBLE_PROMPT, user_content = user_content, keys = key_pool, model = model)
     if isinstance(parsed, dict):
-        if not master_prompt:
-            master_prompt
         return {
             'era_setting': parsed.get('era_setting', '1950s cinematic era, moody atmosphere'),
             'era_setting_vi': parsed.get('era_setting_vi', 'Thập niên 1950, không khí bí ẩn'),
-            'art_style': parsed.get('art_style', 'Cinematic 35mm film photography, 8k, photorealistic'),
+            'art_style': parsed.get('art_style', master_prompt or 'Cinematic 35mm film photography, 8k, photorealistic'),
             'characters': parsed.get('characters', []) }
-    if not master_prompt:
-        master_prompt
     return {
-        'era_setting': None,
+        'era_setting': 'Cinematic narrative era',
         'era_setting_vi': 'Bối cảnh điện ảnh',
-        'art_style': 'Cinematic 35mm film photography, 8k, photorealistic',
+        'art_style': master_prompt or 'Cinematic 35mm film photography, 8k, photorealistic',
         'characters': [] }
 
 
@@ -106,29 +94,20 @@ def generate_synchronized_scene_prompts(scenes, master_prompt = None, visual_bib
 
     Đảm bảo 100% nhất quán nhân vật, thập niên, bối cảnh và trang phục.
     '''
-    if not keys:
-        keys
-    key_pool = get_gemini_keys_pool()
+    key_pool = keys or get_gemini_keys_pool()
     if not key_pool:
         raise ValueError('Chưa cấu hình API Key Gemini nào.')
     if not scenes:
-        if not visual_bible:
-            visual_bible
-        return ([], { })
-    if not None:
-        pass
-    bible = { }
-    if not bible.get('era_setting') or bible.get('characters'):
+        return ([], visual_bible or { })
+    bible = visual_bible or { }
+    if not bible.get('era_setting') or not bible.get('characters'):
         if progress_cb:
             progress_cb('Đang phân tích kịch bản để thiết lập Kinh Thánh Tạo Hình (Visual Continuity Bible)...', 0.1)
-        full_text = (lambda .0: pass# WARNING: Decompyle incomplete
-)(enumerate(scenes, start = 1)())
+        full_text = '\n\n'.join(f'''Phân cảnh {s.get('index', i)}: {s.get('text_segment', '')}''' for i, s in enumerate(scenes, start = 1))
         bible = build_visual_continuity_bible(script_text = full_text, master_prompt = master_prompt, keys = key_pool, model = model)
     chars_summary = _format_characters_for_prompt(bible.get('characters', []))
     era_setting = bible.get('era_setting', 'Cinematic era')
-    if not master_prompt:
-        master_prompt
-    art_style = bible.get('art_style', 'Cinematic 35mm film photography, 8k')
+    art_style = bible.get('art_style', master_prompt or 'Cinematic 35mm film photography, 8k')
     system_instruction = SYSTEM_SCENE_PROMPTS_PROMPT.format(era_setting = era_setting, art_style = art_style, characters_summary = chars_summary)
     batch_size = 14
     total_scenes = len(scenes)
@@ -137,14 +116,10 @@ def generate_synchronized_scene_prompts(scenes, master_prompt = None, visual_bib
 
 def refine_single_scene_prompt(scene, visual_bible, master_prompt = None, previous_context = None, next_context = None, keys = ('', '', '', None, 'gemini-2.5-flash'), model = ('scene', 'dict[str, Any]', 'visual_bible', 'dict[str, Any]', 'master_prompt', 'str', 'previous_context', 'str', 'next_context', 'str', 'keys', 'list[str] | None', 'model', 'str', 'return', 'dict[str, str]')):
     '''Viết lại / làm giàu cả Image Prompt và Video AI Prompt cho duy nhất một phân cảnh, giữ nguyên tính nhất quán của Visual Bible.'''
-    if not keys:
-        keys
-    key_pool = get_gemini_keys_pool()
+    key_pool = keys or get_gemini_keys_pool()
     chars_summary = _format_characters_for_prompt(visual_bible.get('characters', []))
     era_setting = visual_bible.get('era_setting', 'Cinematic era')
-    if not master_prompt:
-        master_prompt
-    art_style = visual_bible.get('art_style', 'Cinematic 35mm film photography, 8k')
+    art_style = visual_bible.get('art_style', master_prompt or 'Cinematic 35mm film photography, 8k')
     sys_prompt = f'''Bạn là Chuyên gia Prompt Điện ảnh (Cinematic Prompt Engineer).\nNhiệm vụ: Viết lại CẢ Image Prompt VÀ Video AI Prompt tiếng Anh chi tiết cho duy nhất MỘT phân cảnh kịch bản / phụ đề SRT.\n\nKINH THÁNH TẠO HÌNH (BẮT BUỘC TUÂN THỦ):\n- THẬP NIÊN & BỐI CẢNH: {era_setting}\n- PHONG CÁCH MỸ THUẬT: {art_style}\n- NHÂN VẬT & TRANG PHỤC CỐ ĐỊNH:\n{chars_summary}\n\nYÊU CẦU:\n1. Đảm bảo nhân vật và trang phục (nếu xuất hiện) chuẩn xác 100% theo Kinh Thánh Tạo Hình.\n2. image_prompt: Prompt ảnh tĩnh (Midjourney/Flux), chi tiết bố cục, ánh sáng chiaroscuro, kết cấu da/vải.\n3. video_motion_prompt: Prompt video AI (Veo 3/Runway/Kling), chi tiết chuyển động máy quay (push-in, pan, tracking), biểu cảm nhân vật, tương tác vật lý, 24fps.\n4. Trả về JSON:\n{{\n  "visual_hint_vi": "1 câu tóm tắt tiếng Việt",\n  "image_prompt": "Cinematic 35mm film still of...",\n  "video_motion_prompt": "Cinematic video shot, smooth camera dolly-in toward..."\n}}\n'''
     user_content = f'''Cảnh trước: {previous_context}\nPhân cảnh hiện tại #{scene.get('index', 1)}: {scene.get('text_segment', '')}\nCảnh tiếp theo: {next_context}'''
     
@@ -163,14 +138,12 @@ def refine_single_scene_prompt(scene, visual_bible, master_prompt = None, previo
             'image_prompt': scene.get('image_prompt', ''),
             'video_motion_prompt': scene.get('video_motion_prompt', ''),
             'visual_hint_vi': scene.get('visual_hint_vi', '') }
-    except Exception:
-        exc = None
+    except Exception as exc:
         logger.warning('Lỗi refine single scene prompt: %s', exc)
-        exc = None
-        del exc
-        continue
-        exc = None
-        del exc
+        return {
+            'image_prompt': scene.get('image_prompt', ''),
+            'video_motion_prompt': scene.get('video_motion_prompt', ''),
+            'visual_hint_vi': scene.get('visual_hint_vi', '') }
 
 
 
@@ -251,49 +224,44 @@ def export_prompts_to_csv(scenes = None, output_path = None, prefix = None, suff
     out_file.parent.mkdir(parents = True, exist_ok = True)
     p_clean = f'''{prefix.strip()} ''' if prefix.strip() else ''
     s_clean = f''' {suffix.strip()}''' if suffix.strip() else ''
-    f = open(out_file, 'w', encoding = 'utf-8-sig', newline = '')
-    writer = csv.writer(f)
-    writer.writerow([
-        'Phân Cảnh',
-        'Tên File Ảnh Tương Ứng',
-        'Tên File Video Tương Ứng',
-        'Thời Gian SRT Bắt Đầu',
-        'Thời Gian SRT Kết Thúc',
-        'Câu Thoại Kịch Bản / SRT',
-        'Gợi Ý Tiếng Việt',
-        'Prompt Hình Ảnh Tiếng Anh (Image Prompt)',
-        'Prompt Video AI Tiếng Anh (Video Motion Prompt)',
-        'Đã Có File Ảnh',
-        'Đã Có File Video'])
-    for idx, s in enumerate(scenes, start = 1):
-        s_idx = s.get('index', idx)
-        t_start = float(s.get('start_time_s', 0))
-        t_end = float(s.get('end_time_s', 0))
-        p_img = s.get('image_prompt', '').strip()
-        p_vid = s.get('video_motion_prompt', '').strip()
-        if p_vid and p_img:
-            p_vid = f'''Cinematic video clip, camera motion, {p_img}, 24fps'''
-        final_img = f'''{p_clean}{p_img}{s_clean}'''.strip()
-        final_vid = f'''{p_clean}{p_vid}{s_clean}'''.strip()
-        has_img = 'Đã có' if s.get('image_path') and Path(s.get('image_path')).is_file() else 'Chưa'
-        has_vid = 'Đã có' if s.get('video_path') and Path(s.get('video_path')).is_file() else 'Chưa'
+    with open(out_file, 'w', encoding = 'utf-8-sig', newline = '') as f:
+        writer = csv.writer(f)
         writer.writerow([
-            f'''Scene #{s_idx}''',
-            f'''scene_{s_idx:03d}.png''',
-            f'''scene_{s_idx:03d}.mp4''',
-            format_srt_timestamp(t_start),
-            format_srt_timestamp(t_end),
-            s.get('text_segment', '').strip(),
-            s.get('visual_hint_vi', '').strip(),
-            final_img,
-            final_vid,
-            has_img,
-            has_vid])
-    None(None, None)
+            'Phân Cảnh',
+            'Tên File Ảnh Tương Ứng',
+            'Tên File Video Tương Ứng',
+            'Thời Gian SRT Bắt Đầu',
+            'Thời Gian SRT Kết Thúc',
+            'Câu Thoại Kịch Bản / SRT',
+            'Gợi Ý Tiếng Việt',
+            'Prompt Hình Ảnh Tiếng Anh (Image Prompt)',
+            'Prompt Video AI Tiếng Anh (Video Motion Prompt)',
+            'Đã Có File Ảnh',
+            'Đã Có File Video'])
+        for idx, s in enumerate(scenes, start = 1):
+            s_idx = s.get('index', idx)
+            t_start = float(s.get('start_time_s', 0))
+            t_end = float(s.get('end_time_s', 0))
+            p_img = s.get('image_prompt', '').strip()
+            p_vid = s.get('video_motion_prompt', '').strip()
+            if p_vid and p_img:
+                p_vid = f'''Cinematic video clip, camera motion, {p_img}, 24fps'''
+            final_img = f'''{p_clean}{p_img}{s_clean}'''.strip()
+            final_vid = f'''{p_clean}{p_vid}{s_clean}'''.strip()
+            has_img = 'Đã có' if s.get('image_path') and Path(s.get('image_path')).is_file() else 'Chưa'
+            has_vid = 'Đã có' if s.get('video_path') and Path(s.get('video_path')).is_file() else 'Chưa'
+            writer.writerow([
+                f'''Scene #{s_idx}''',
+                f'''scene_{s_idx:03d}.png''',
+                f'''scene_{s_idx:03d}.mp4''',
+                format_srt_timestamp(t_start),
+                format_srt_timestamp(t_end),
+                s.get('text_segment', '').strip(),
+                s.get('visual_hint_vi', '').strip(),
+                final_img,
+                final_vid,
+                has_img,
+                has_vid])
     logger.info('Đã xuất file CSV prompts: %s', out_file)
     return out_file
-    with None:
-        if not None:
-            pass
-    continue
 

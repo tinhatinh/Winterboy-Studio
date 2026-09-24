@@ -59,8 +59,8 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 
 ### Yêu cầu hệ thống:
 - Hệ điều hành: Windows 10 / 11.
-- Môi trường: Python 3.10 đến 3.12.
-- FFmpeg (cần thêm vào biến môi trường PATH để render video).
+- Môi trường: Python 3.10 đến 3.12 (bản đã phát hành biên dịch bằng 3.12).
+- FFmpeg (phải có trên `PATH` để render video).
 
 ### Các bước chạy code:
 1. **Tải mã nguồn**: Clone repository này về máy.
@@ -69,15 +69,51 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
    cd Winterboy-Studio
    ```
 2. **Cài đặt thư viện**:
-   Dự án sử dụng nhiều thư viện xử lý hình ảnh và GUI, cài đặt qua pip:
    ```bash
-   pip install customtkinter tkinter opencv-python pydub requests
-   # (Và các thư viện cần thiết khác tuỳ theo tính năng bạn sử dụng)
+   pip install -r requirements.txt
    ```
-3. **Khởi chạy ứng dụng**:
+   `tkinter` KHÔNG cần cài vì nó đi kèm CPython. Các nhóm nặng (torch/onnxruntime
+   cho ZeroTTS, demucs cho tách lời) có chú thích riêng trong `requirements.txt`.
+3. **Kiểm tra mã nguồn trước khi sửa**:
+   ```bash
+   python tools/check_source.py --damaged --parity   # cổng kiểm tổng
+   python tests/run_tests.py                         # bộ test đối chiếu
+   ```
+4. **Khởi chạy ứng dụng**:
    ```bash
    python main.py
    ```
+
+### ⚠️ Trạng thái mã nguồn, nói thẳng
+
+Repo này được **dịch ngược từ bytecode** (`.pyc`) của bản đã phát hành bằng
+Decompyle++, không phải mã gốc tác giả viết. Hệ quả thật sự:
+
+- Một số file ra mã **không phải Python hợp lệ** (`SrtCue = <NODE:12>()`, `None =`
+  trong `except`, `getattr(...) = ...`).
+- Nguy hiểm hơn, nhiều hàm **parse bình thường nhưng chạy sai** — ví dụ đã bắt được:
+  `duration_s` mất `max(0.05, ...)`, `record()` mất giá trị mặc định của `save` nên
+  mọi lời gọi nổ `TypeError`, `file_dependency` mất vòng đọc theo khối.
+- Vì vậy "file nằm trong repo" ≠ "file đó chạy được như bản Release".
+
+Cách làm việc đang dùng: **lấy bytecode làm chuẩn**, không đoán.
+`tools/compare_bytecode.py` biên dịch file trong repo rồi so từng code object với
+`.pyc` đã phát hành — khớp ở tầng instruction thì hành vi chắc chắn giống, không cần
+gọi mạng. Quy trình đầy đủ ở [`docs/restore_from_bytecode.md`](docs/restore_from_bytecode.md).
+
+Số liệu thay đổi liên tục trong lúc khôi phục, nên repo không ghi cứng. Muốn biết
+tình trạng hiện tại, chạy đúng hai lệnh này:
+
+```bash
+python tools/compare_bytecode.py --all    # dòng đầu: bao nhiêu module khớp bytecode 100%
+python tests/run_tests.py                 # dòng cuối: bao nhiêu test pass/fail
+```
+
+`tools/check_source.py` cho biết còn bao nhiêu file chưa parse được.
+
+Nếu bạn chỉ muốn **dùng**, tải Release zip ở mục trên. Nếu muốn **đóng góp mã nguồn**,
+sửa theo quy trình trong `docs/restore_from_bytecode.md` và chạy hai cổng kiểm ở bước 3
+trước khi mở PR — sửa xong mà `compare_bytecode` vẫn báo lệch thì coi như chưa xong.
 
 ---
 

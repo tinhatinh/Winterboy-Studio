@@ -79,29 +79,29 @@ def _extract_clean_json_from_text(raw_text = None):
             end = text.find('```', start)
             if end != -1:
                 return json.loads(text[start:end].strip())
-            return None.loads(text[start:].strip())
-            if '```' in text:
-                
-                try:
-                    start = text.find('```') + 3
-                    end = text.find('```', start)
-                    if end != -1:
-                        return json.loads(text[start:end].strip())
-                    return None.loads(text[start:].strip())
-                    first_brace = text.find('{')
-                    last_brace = text.rfind('}')
-                    if first_brace != -1 and last_brace > first_brace:
-                        
-                        try:
-                            candidate = text[first_brace:last_brace + 1]
-                            return json.loads(candidate)
-                            return None
-                            except Exception:
-                                continue
-                            except Exception:
-                                continue
-                        except Exception:
-                            return None
+            return json.loads(text[start:].strip())
+        except Exception:
+            pass
+    if '```' in text:
+        
+        try:
+            start = text.find('```') + 3
+            end = text.find('```', start)
+            if end != -1:
+                return json.loads(text[start:end].strip())
+            return json.loads(text[start:].strip())
+        except Exception:
+            pass
+    first_brace = text.find('{')
+    last_brace = text.rfind('}')
+    if first_brace != -1 and last_brace > first_brace:
+        
+        try:
+            candidate = text[first_brace:last_brace + 1]
+            return json.loads(candidate)
+        except Exception:
+            pass
+    return None
 
 
 
@@ -170,9 +170,7 @@ def build_ai_story_creator_prompt(idea, character, setting, master_prompt_style 
     else:
         target_words = 'khoảng 2.000 - 2.500 từ'
         char_rule_num = '~10.000 ký tự'
-    if not master_prompt_style.strip():
-        master_prompt_style.strip()
-    style_guide = 'Cinematic authentic storytelling shot, photorealistic, 35mm photograph, dramatic chiaroscuro lighting, moody atmosphere, 8k resolution'
+    style_guide = master_prompt_style.strip() or 'Cinematic authentic storytelling shot, photorealistic, 35mm photograph, dramatic chiaroscuro lighting, moody atmosphere, 8k resolution'
     character_section = f'''- Nhân vật chính: {character}\n''' if character.strip() else ''
     setting_section = f'''- Bối cảnh & Không gian: {setting}\n''' if setting.strip() else ''
     return f'''Bạn là một nhà biên kịch điện ảnh tài hoa (Master Screenwriter) và đạo diễn sản xuất video kể chuyện (Storytelling Video Producer) triệu view quốc tế.\n\nNHIỆM VỤ:\nSáng tạo một KỊCH BẢN KỂ CHUYỆN NGUYÊN BẢN (100% Zero Copyright) lôi cuốn, kịch tính, chân thực và một MASTER PROMPT tạo hình ảnh đồng bộ chuẩn điện ảnh dựa trên các yêu cầu sau:\n\nTHÔNG TIN ĐẦU VÀO:\n- Ý tưởng cốt truyện: {idea}\n{character_section}{setting_section}- Phong cách hình ảnh mong muốn: {style_guide}\n- Tông giọng câu chuyện: {tone_style}\n- Ngôn ngữ kịch bản: {language}\n- Ngôn ngữ mô tả video: {desc_language} (Mặc định là Tiếng Anh)\n- Mức độ dài mục tiêu: {len_desc} ({target_words})\n\nQUY TẮC ĐỘ DÀI BẮT BUỘC (TUYỆT ĐỐI TUÂN THỦ):\n1. Kịch bản BẮT BUỘC phải viết ĐỦ VÀ ĐÚNG số lượng ký tự yêu cầu là {char_rule_num} ({len_desc}, {target_words}).\n2. Cho phép mức chênh lệch nhẹ trong phạm vi 5-10%, TUYỆT ĐỐI KHÔNG ĐƯỢC VIẾT QUÁ NGẮN, không được tóm tắt sơ sài, không được lược bỏ diễn biến hay cắt ngắn lời văn.\n3. TUYỆT ĐỐI KHÔNG ĐƯỢC VIẾT QUÁ DÀI vượt quá hạn mức yêu cầu.\n4. Triển khai đầy đủ các Hồi: Mở đầu gây tò mò kích thích (Hook), Thắt nút mâu thuẫn, Diễn biến nghẹt thở, Cao trào bùng nổ, Cú twist bất ngờ và Dư âm sâu sắc.\n5. Mỗi đoạn văn xuôi phải được trau chuốt từng câu chữ, giàu tính hình tượng và cảm xúc điện ảnh.\n\nQUY CÁCH ĐẶT TIÊU ĐỀ, CHỦ ĐỀ, MÔ TẢ & THUMBNAIL:\n1. video_title: Đặt một tiêu đề video SIÊU HẤP DẪN, kịch tính, khơi gợi sự tò mò mạnh mẽ (bằng ngôn ngữ kịch bản: {language}).\n2. video_topic_vi: Tóm tắt đề tài / ý nghĩa câu chuyện bằng MỘT câu Tiếng Việt súc tích, ngắn gọn (ví dụ: \'Bí ẩn vụ mất tích tại thị trấn mỏ than năm 1985\').\n3. video_description: Viết đoạn tóm tắt kịch bản / cốt truyện hấp dẫn, sâu sắc bằng {desc_language} (CHỈ CHỨA NỘI DUNG MÔ TẢ TRUYỆN THUẦN TÚY, TUYỆT ĐỐI KHÔNG CHÈN CÂU KÊU GỌI LIKE/SHARE/SUBSCRIBE, không chèn hashtag, không chèn lời chào thừa thãi).\n4. master_prompt: Viết hoàn toàn bằng TIẾNG ANH chuyên nghiệp (dành cho Midjourney, Flux, Imagen, Stable Diffusion). Mô tả chi tiết phong cách nghệ thuật, ánh sáng (lighting), góc máy (35mm film / cinematic), bảng màu (color palette), bối cảnh và cảm xúc nhân vật đồng bộ 100% với cốt truyện.\n5. thumbnail_prompt: Viết hoàn toàn bằng TIẾNG ANH prompt tạo ảnh Thumbnail YouTube triệu view: Cinematic 35mm film still, photorealistic 8k, góc nhìn cận cảnh đặc tả cảm xúc cao trào kịch tính nhất, ánh sáng tương phản chiaroscuro, bố cục vàng 16:9, kèm chữ text overlay giật gân (ví dụ: text overlay: "[SHORT_HOOK]").\n6. era_setting: Mô tả kỷ nguyên, thời đại và bối cảnh địa danh bằng Tiếng Anh (ví dụ: Victorian 1880s London, foggy cobblestone streets).\n7. characters: Danh sách nhân vật chính bằng tiếng Anh để khóa ngoại hình nhất quán (Visual Bible).\n8. script_text: Toàn bộ nội dung văn bản kịch bản chi tiết, chia thành các đoạn văn mạch lạc (mỗi đoạn xuống dòng để sau này dễ bóc tách thành các phân cảnh video).\n\nBẮT BUỘC TRẢ VỀ ĐỊNH DẠNG JSON DUY NHẤT (Chỉ trả về khối mã JSON trong cặp dấu ```json ... ```, KHÔNG viết bất kỳ lời chào, ghi chú hay giải thích nào bên ngoài):\n```json\n{{\n  "video_title": "Tiêu đề video cực thu hút ở đây",\n  "video_topic_vi": "Tóm tắt chủ đề kịch bản bằng 1 câu Tiếng Việt",\n  "video_description": "Pure narrative story synopsis in the requested description language without CTA...",\n  "master_prompt": "Cinematic authentic storytelling shot, photorealistic 8k, 35mm film photograph, dramatic atmospheric lighting...",\n  "thumbnail_prompt": "Cinematic 35mm film still, ultra-dramatic high-contrast YouTube thumbnail composition...",\n  "era_setting": "Detailed era & setting description in English",\n  "characters": [\n    {{\n      "name": "Character Name in English",\n      "gender": "male hoặc female",\n      "age": "Age in English",\n      "features": "Distinct facial features, hair, eye color in English",\n      "signature_attire": "Fixed recognizable attire in English for visual continuity"\n    }}\n  ],\n  "script_text": "Toàn bộ nội dung kịch bản văn xuôi điện ảnh đầy đủ chi tiết đúng số lượng ký tự yêu cầu..."\n}}\n```\n'''
@@ -213,9 +211,7 @@ def generate_ai_story_description(title = None, topic = None, script_sample = No
     elif 'tiếng đức' in lang_lower or 'german' in lang_lower:
         lang_instruction = 'Write ENTIRELY in fluent German.'
     prompt = f'''You are a master storyteller and professional film synopsis writer.\nWrite a captivating, dramatic synopsis/description for the following video story.\n\nStory Title: {title}\nTopic / Theme: {topic}\nStory Context / Script Excerpt:\n{script_sample[:3000]}\n\nSTRICT REQUIREMENTS:\n1. {lang_instruction}\n2. ONLY output the pure story description / synopsis (1 to 2 well-crafted paragraphs).\n3. DO NOT include call-to-action lines (DO NOT write \'Like, share, subscribe\', \'Stay tuned\', \'Click the bell\', etc.).\n4. DO NOT include introductory greetings (such as \'Here is the description\', \'Sure\', \'Synopsis:\').\n5. Output ONLY the pure narrative description text itself.\n'''
-    if not model:
-        model
-    primary = normalize_gemini_model('gemini-flash-latest')
+    primary = normalize_gemini_model(model or 'gemini-flash-latest')
     candidate_models = [
         primary,
         'gemini-flash-latest',
@@ -226,16 +222,8 @@ def generate_ai_story_description(title = None, topic = None, script_sample = No
 
 def generate_thumbnail_prompt_fallback(title = None, topic = None, master_prompt = None):
     '''Tạo Prompt Thumbnail dự phòng chuẩn điện ảnh YouTube khi không có API key.'''
-    if not master_prompt:
-        master_prompt
-    if not ''.strip():
-        ''.strip()
-    base_style = 'Cinematic 35mm film still, photorealistic 8k, dramatic lighting, moody atmosphere'
-    if not title:
-        title
-        if not topic:
-            topic
-    hook_title = 'THE SHOCKING TRUTH'.strip().upper()
+    base_style = (master_prompt or '').strip() or 'Cinematic 35mm film still, photorealistic 8k, dramatic lighting, moody atmosphere'
+    hook_title = (title or topic or 'THE SHOCKING TRUTH').strip().upper()
     return f'''{base_style}, high-impact viral YouTube thumbnail composition, dramatic emotional climax, intense expressive character reaction, striking chiaroscuro rim lighting, shallow depth of field, vivid cinematic color grading, bold typography text overlay: "{hook_title}", master composition, 8k resolution --ar 16:9'''
 
 
@@ -244,12 +232,8 @@ def generate_ai_thumbnail_prompt(title = None, topic = None, script_sample = Non
     keys = get_translation_api_keys('Gemini')
     if not keys:
         return generate_thumbnail_prompt_fallback(title, topic, master_prompt)
-    if not master_prompt:
-        master_prompt
-    prompt = f'''{title}\n- Theme / Topic: {topic}\n- Art Style / Master Prompt: {'Cinematic 35mm film still, photorealistic 8k, dramatic chiaroscuro lighting'}\n- Story Excerpt:\n{script_sample[:2500]}\n\nSTRICT REQUIREMENTS:\n1. Write ENTIRELY in professional, evocative ENGLISH.\n2. Focus on an extreme emotional climax or shocking moment (a stunning character reaction, disbelief, tears, confrontation, or mystery).\n3. Specify cinematic composition: wide establishing or intense medium close-up, rule of thirds, dramatic chiaroscuro rim lighting, deep shadows, atmospheric mist, shallow depth of field.\n4. Include a short punchy curiosity text overlay directive (e.g., text overlay: "SHORT DRAMATIC HOOK").\n5. Output ONLY the pure prompt text in 1 powerful paragraph (no markdown, no quotes around the entire output, no explanations).\n'''
-    if not model:
-        model
-    primary = normalize_gemini_model('gemini-flash-latest')
+    prompt = f'''You are a master YouTube Thumbnail Art Director and viral visual strategist specializing in high-CTR storytelling thumbnails.\nCreate ONE master English image generation prompt (for Midjourney, Flux, Imagen, Stable Diffusion) to produce an ultra-dramatic, viral 16:9 YouTube thumbnail.\n\nSTORY DETAILS:\n- Story Title: {title}\n- Theme / Topic: {topic}\n- Art Style / Master Prompt: {master_prompt or "Cinematic 35mm film still, photorealistic 8k, dramatic chiaroscuro lighting"}\n- Story Excerpt:\n{script_sample[:2500]}\n\nSTRICT REQUIREMENTS:\n1. Write ENTIRELY in professional, evocative ENGLISH.\n2. Focus on an extreme emotional climax or shocking moment (a stunning character reaction, disbelief, tears, confrontation, or mystery).\n3. Specify cinematic composition: wide establishing or intense medium close-up, rule of thirds, dramatic chiaroscuro rim lighting, deep shadows, atmospheric mist, shallow depth of field.\n4. Include a short punchy curiosity text overlay directive (e.g., text overlay: "SHORT DRAMATIC HOOK").\n5. Output ONLY the pure prompt text in 1 powerful paragraph (no markdown, no quotes around the entire output, no explanations).\n'''
+    primary = normalize_gemini_model(model or 'gemini-flash-latest')
     candidate_models = [
         primary,
         'gemini-flash-latest',

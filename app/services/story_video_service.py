@@ -43,9 +43,10 @@ def _ffmpeg():
 def _hidden_kwargs():
     if not sys.platform.startswith('win'):
         return { }
-    creationflags = None(subprocess, 'CREATE_NO_WINDOW', 134217728)
+    creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 134217728)
     startupinfo = subprocess.STARTUPINFO()
-    getattr(subprocess, 'SW_HIDE', 0) = startupinfo, startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1), .dwFlags
+    startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1)
+    startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
     return {
         'creationflags': creationflags,
         'startupinfo': startupinfo }
@@ -117,9 +118,7 @@ def generate_veo_ai_video(prompt = None, output_video_path = None, *, aspect_rat
     prompt = prompt.strip()
     if not prompt:
         raise ValueError('Prompt sinh video không được để trống')
-    if not keys:
-        keys
-    key_pool = get_translation_api_keys('Gemini')
+    key_pool = keys or get_translation_api_keys('Gemini')
     if not key_pool:
         single = get_gemini_api_key()
         if single:
@@ -156,9 +155,7 @@ def generate_omni_flash_video(prompt = None, output_video_path = None, *, aspect
     if progress_cb:
         progress_cb(0.7, 'Omni Flash: Đang sinh hình ảnh gốc độ nét cao...')
     temp_img = out_file.parent / f'''omni_base_{out_file.stem}.png'''
-    if not keys:
-        keys
-    key_pool = get_gemini_keys_pool()
+    key_pool = keys or get_gemini_keys_pool()
     api_k = key_pool[0] if key_pool else None
     generate_gemini_image(prompt, temp_img, api_key = api_k, aspect_ratio = aspect_ratio)
     if progress_cb:

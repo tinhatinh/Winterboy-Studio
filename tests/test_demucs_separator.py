@@ -6,9 +6,18 @@ Ràng buộc: test KHÔNG chạy ffmpeg hay demucs.
     dựng ra, rồi mô phỏng file đầu ra — vẫn kiểm được toàn bộ logic dựng câu lệnh,
     đường dẫn cache, chứng từ artifact và thứ tự fallback CUDA -> CPU;
   * ``_run_cancellable`` chỉ thật sự chạy tiến trình với ``python -c`` vài dòng, để
-    kiểm vòng poll / kill / timeout / cắt log;
+    kiểm vòng poll / kill / timeout / cắt log; mấy nhánh cần kết luận tức thời thì
+    dùng ``fake_subprocess`` + ``FakeTime`` (tiến trình và đồng hồ giả) để không phụ
+    thuộc tốc độ máy;
   * torch và importlib.metadata được stub qua sys.modules nên demucs_runtime_status
-    không nạp mô hình thật.
+    không nạp mô hình thật;
+  * mọi đường dẫn của máy (%LOCALAPPDATA%, home, %TEMP%) đều bị chặn và chuẩn hoá về
+    ``<ROOT>``/``<TMP>``: test phải cho kết quả giống hệt nhau trên mọi máy.
+
+Hai hành vi lạ của bản phát hành được ghi lại thành assertion (không sửa source vì
+module này đóng băng bytecode): ``_find_executable`` sắp ứng viên ``Python*/Scripts``
+theo tự điển nên Python39 thắng Python312, và ``_run_cancellable`` chỉ xét
+cancel_event giữa hai lần poll.
 
 Package cha ``app.services`` trỏ vào _internal vì app/services/__init__.py trong repo
 còn hỏng cú pháp; artifact_manifest dùng bản đã phát hành để hai bên cùng chuẩn
@@ -133,9 +142,9 @@ def make_importlib(spec_present = True):
 class FakePath:
     '''Giống Path nhưng is_file() ném OSError đúng vào những path đã đánh dấu.
 
-    home() bị chặn thật: nếu test quên đặt ``_home`` thì ném lỗi ngay, thay vì để
-    thư mục mục của máy chạy test (``C:\\Users\\...\\AppData\\Local``) lọt vào kết quả
-    và làm assertions chỉ đúng trên một chiếc laptop.
+    home() bị chặn thật: test nào quên đặt ``_home`` thì nhận AssertionError ngay,
+    thay vì để ``%LOCALAPPDATA%`` của máy chạy test lọt vào kết quả và làm assertion
+    chỉ đúng trên một chiếc laptop.
     '''
 
     fail = set()
@@ -409,8 +418,8 @@ def test_find_executable_fallback_roots():
                 from_home = normalize(mod._find_executable('demucs'), root)
             with fake_home(only):
                 from_only_python = normalize(mod._find_executable('demucs'), root)
-            # _home bị xoá sau when -> nếu module còn gọi Path.home() mà test quên đặt
-            # giả thì nhận AssertionError thay vì âm thầm dùng home thật
+            # bằng chứng home() bị chặn thật: vừa xoá _home giả là module ném
+            # AssertionError thay vì âm thầm quay về home của máy chạy test
             FakePath._home = None
             forgotten = raises(lambda: mod._find_executable('demucs'))
         return {'demucs': demucs, 'ffmpeg': ffmpeg, 'none': none, 'before': before,
@@ -933,7 +942,7 @@ def test_separate_background_cache_hit_and_manifest():
     assert res['n_keys'] == 3 and res['n_keys_after_hit'] == 1, res    # HIT không ghi chứng từ
     assert res['top_keys'] == ['artifacts', 'updated_at', 'version'], res['top_keys']
     assert res['key_prefix'] == ['demucs'], res['key_prefix']
-    # id chứng từ = 'demucs:' + sha256 của dependencies -> 3 khóa khác nhau
+    # id chứng từ = 'demucs:' + sha256 của dependencies -> ba khoá khác nhau
     assert res['key_shape'] == [64, 64, 64], res['key_shape']
     assert res['fp_is_key'] == [True, True, True], res['fp_is_key']
     assert res['record_keys'] == [('dependencies', 'fingerprint', 'metadata', 'output',
@@ -941,10 +950,11 @@ def test_separate_background_cache_hit_and_manifest():
     assert res['meta_keys'] == [('demucs_version', 'device', 'model', 'source', 'torch_version')], \
         res['meta_keys']
     # đúng 2 bộ tham số: model htdemucs và htdemucs_6s, sample rate luôn 44100
-    assert res['deps'] == [(('demucs_version', '4.0.1'), ('model', 'htdemucs'),
-                            ('sample_rate', 44100), ('stems', 'vocals'), ('version', 2)),
-                           (('demucs_version', '4.0.1'), ('model', 'htdemucs_6s'),
-                            ('sample_rate', 44100), ('stems', 'vocals'), ('version', 2))], res['deps']
+    def dep_of(model):
+        return (('demucs_version', '4.0.1'), ('model', model), ('sample_rate', 44100),
+                ('stems', 'vocals'), ('version', 2))
+
+    assert res['deps'] == [dep_of('htdemucs'), dep_of('htdemucs_6s')], res['deps']
     assert res['outputs'] == ['<FP>_no_vocals.wav'] * 3, res['outputs']
     assert res['exists'] == [True, True, True] and res['sizes'] == [8000, 8000, 8000], res
     assert res['events'] == [0.02, 0.12, 1.0, 1.0], res['events']     # lần 2 là cache HIT

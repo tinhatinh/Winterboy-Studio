@@ -57,61 +57,59 @@ def extract_scene_index_from_filename(filename = None):
                 val = int(stem)
                 if val < 1900 or val > 2100:
                     return val
-                return None
-                return None
-                m = re.match('^[\\[\\(\\{#【\\s]*(\\d+)[\\]\\)\\}】\\s._\\-]', stem)
-                if m:
-                    digits = m.group(1)
-                    if len(digits) <= 4:
-                        
-                        try:
-                            val = int(digits)
-                            if val < 1900 or val > 2100:
-                                return val
-                            m = re.match('^[\\[\\(\\{#【\\s]*(\\d+)(?=[A-Za-z\\u00C0-\\u024F\\u1EA0-\\u1EF9])', stem)
-                            if m:
-                                digits = m.group(1)
-                                if len(digits) <= 4:
-                                    
-                                    try:
-                                        val = int(digits)
-                                        if val < 1900 or val > 2100:
-                                            return val
-                                        m = re.search('(?:^|[._\\s\\-])(?:scene|canh|cảnh|img|image|pic|photo|clip|shot|video|vid|anh|ảnh|tap|tập|part|pt|p|phancanh|phân cảnh)[._\\s\\-#\\[\\(]*(\\d{1,4})(?!\\d)', stem, re.IGNORECASE)
-                                        if m:
-                                            
-                                            try:
-                                                val = int(m.group(1))
-                                                if val < 1900 or val > 2100:
-                                                    return val
-                                                m = re.search('[._\\s\\-#\\[\\(](\\d{1,4})[\\]\\)]?$', stem)
-                                                if m:
-                                                    
-                                                    try:
-                                                        val = int(m.group(1))
-                                                        if val < 1900 or val > 2100:
-                                                            return val
-                                                        nums = re.findall('\\b\\d+\\b', stem)
-                                                        if len(nums) == 1 and len(nums[0]) <= 4:
-                                                            
-                                                            try:
-                                                                val = int(nums[0])
-                                                                if val < 1900 or val > 2100:
-                                                                    return val
-                                                                return None
-                                                                return None
-                                                                except ValueError:
-                                                                    return None
-                                                                except ValueError:
-                                                                    continue
-                                                                except ValueError:
-                                                                    continue
-                                                                except ValueError:
-                                                                    continue
-                                                                except ValueError:
-                                                                    continue
-                                                            except ValueError:
-                                                                return None
+            except ValueError:
+                pass
+        return None
+    m = re.match(r'^[\[\(\{#【\s]*(\d+)[\]\)\}】\s._\-]', stem)
+    if m:
+        digits = m.group(1)
+        if len(digits) <= 4:
+            
+            try:
+                val = int(digits)
+                if val < 1900 or val > 2100:
+                    return val
+            except ValueError:
+                pass
+    m = re.match(r'^[\[\(\{#【\s]*(\d+)(?=[A-Za-z\u00C0-\u024F\u1EA0-\u1EF9])', stem)
+    if m:
+        digits = m.group(1)
+        if len(digits) <= 4:
+            
+            try:
+                val = int(digits)
+                if val < 1900 or val > 2100:
+                    return val
+            except ValueError:
+                pass
+    m = re.search(r'(?:^|[._\s\-])(?:scene|canh|cảnh|img|image|pic|photo|clip|shot|video|vid|anh|ảnh|tap|tập|part|pt|p|phancanh|phân cảnh)[._\s\-#\[\(]*(\d{1,4})(?!\d)', stem, re.IGNORECASE)
+    if m:
+        
+        try:
+            val = int(m.group(1))
+            if val < 1900 or val > 2100:
+                return val
+        except ValueError:
+            pass
+    m = re.search(r'[._\s\-#\[\(](\d{1,4})[\]\)]?$', stem)
+    if m:
+        
+        try:
+            val = int(m.group(1))
+            if val < 1900 or val > 2100:
+                return val
+        except ValueError:
+            pass
+    nums = re.findall(r'\b\d+\b', stem)
+    if len(nums) == 1 and len(nums[0]) <= 4:
+        
+        try:
+            val = int(nums[0])
+            if val < 1900 or val > 2100:
+                return val
+        except ValueError:
+            pass
+    return None
 
 
 
@@ -202,25 +200,17 @@ def assign_image_to_scene(scene = None, image_path = None, project_dir = None):
                     dest = img_dir / f'''{sc_id}{ext}'''
                     shutil.copy2(p, dest)
                     final_path = dest.resolve()
-                scene['image_path'] = str(final_path)
-                if not scene.get('image_source'):
-                    scene.get('image_source')
-                scene['image_source'] = 'manual'
-                scene['media_type'] = 'image'
-                scene['video_path'] = ''
-                scene['video_source'] = ''
-                if scene.get('status') in ('pending', '', None):
-                    scene['status'] = 'image_ready'
-                return scene
-            except Exception:
-                e = None
+            except Exception as e:
                 logger.warning('Không thể copy ảnh vào thư mục dự án: %s', e)
                 final_path = p
-                e = None
-                del e
-                continue
-                e = None
-                del e
+        scene['image_path'] = str(final_path)
+        scene['image_source'] = scene.get('image_source') or 'manual'
+        scene['media_type'] = 'image'
+        scene['video_path'] = ''
+        scene['video_source'] = ''
+        if scene.get('status') in ('pending', '', None):
+            scene['status'] = 'image_ready'
+    return scene
 
 
 
@@ -250,42 +240,36 @@ def apply_single_image_to_all_scenes(scenes = None, image_path = None, project_d
             if p.resolve() != dest.resolve():
                 shutil.copy2(p, dest)
             final_path = dest.resolve()
-            final_path_str = str(final_path)
-            count = 0
-            for sc in scenes:
-                if isinstance(sc, dict):
-                    sc['image_path'] = final_path_str
-                    sc['image_source'] = 'single_for_all'
-                    sc['media_type'] = 'image'
-                    sc['video_path'] = ''
-                    sc['video_source'] = ''
-                    if sc.get('status') in ('pending', '', None):
-                        sc['status'] = 'image_ready'
-                    count += 1
-                    continue
-                if not hasattr(sc, 'image_path'):
-                    continue
-                sc.image_path = final_path_str
-                sc.image_source = 'single_for_all'
-                sc.media_type = 'image'
-                if hasattr(sc, 'video_path'):
-                    sc.video_path = ''
-                if hasattr(sc, 'video_source'):
-                    sc.video_source = ''
-                if getattr(sc, 'status', '') in ('pending', '', None):
-                    sc.status = 'image_ready'
-                count += 1
-            logger.info('Đã áp dụng 1 ảnh duy nhất cho %d phân cảnh: %s', count, final_path_str)
-            return count
-        except Exception:
-            err = None
+        except Exception as err:
             logger.warning('Không thể copy ảnh vào thư mục dự án: %s', err)
             final_path = p
-            err = None
-            del err
+    final_path_str = str(final_path)
+    count = 0
+    for sc in scenes:
+        if isinstance(sc, dict):
+            sc['image_path'] = final_path_str
+            sc['image_source'] = 'single_for_all'
+            sc['media_type'] = 'image'
+            sc['video_path'] = ''
+            sc['video_source'] = ''
+            if sc.get('status') in ('pending', '', None):
+                sc['status'] = 'image_ready'
+            count += 1
             continue
-            err = None
-            del err
+        if not hasattr(sc, 'image_path'):
+            continue
+        sc.image_path = final_path_str
+        sc.image_source = 'single_for_all'
+        sc.media_type = 'image'
+        if hasattr(sc, 'video_path'):
+            sc.video_path = ''
+        if hasattr(sc, 'video_source'):
+            sc.video_source = ''
+        if getattr(sc, 'status', '') in ('pending', '', None):
+            sc.status = 'image_ready'
+        count += 1
+    logger.info('Đã áp dụng 1 ảnh duy nhất cho %d phân cảnh: %s', count, final_path_str)
+    return count
 
 
 
@@ -293,9 +277,7 @@ def get_story_provider_voices(provider = None):
     '''Trả về danh sách các cặp (tên_hiển_thị, mã_giọng_hoặc_key) cho nhà cung cấp TTS.
     Tất cả nhãn hiển thị đều chuyên nghiệp, không chứa icon/emoji.
     '''
-    if not provider:
-        provider
-    provider = 'Edge TTS'.strip()
+    provider = (provider or 'Edge TTS').strip()
     records = []
     if provider == 'Edge TTS':
         list_all_edge_voices = list_all_edge_voices
@@ -307,16 +289,12 @@ def get_story_provider_voices(provider = None):
 
 def generate_scene_audio(scene = None, output_path = None, voice = None, speed = None, *, provider, model_id):
     '''Sinh giọng đọc (Edge-TTS, CapCut, ElevenLabs, VieNeu, Google) cho phân cảnh và đo thời lượng (giây).'''
-    if not scene.get('text_segment'):
-        scene.get('text_segment')
-    text = ''.strip()
+    text = (scene.get('text_segment') or '').strip()
     if not text:
-        return 0
+        return 0.0
     out_file = Path(output_path)
     out_file.parent.mkdir(parents = True, exist_ok = True)
-    if not provider:
-        provider
-    provider_norm = 'Edge TTS'.strip()
+    provider_norm = (provider or 'Edge TTS').strip()
     if provider_norm == 'Edge TTS':
         rate_str = speed_to_edge_rate(speed)
         raw_voice = voice.rsplit('|', 1)[-1].strip() if '|' in voice else voice
@@ -372,9 +350,9 @@ def split_scene_text_to_cues(text = None, duration = None, max_chars_per_cue = N
     text = text.strip()
     if not text:
         return []
-    if None(text) <= max_chars_per_cue:
+    if len(text) <= max_chars_per_cue:
         return [
-            (0, duration, wrap_cue_text(text, max_line = max_line))]
+            (0.0, duration, wrap_cue_text(text, max_line = max_line))]
 # WARNING: Decompyle incomplete
 
 

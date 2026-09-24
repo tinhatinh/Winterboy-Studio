@@ -1,7 +1,14 @@
 # Source Generated with Decompyle++
 # File: blur_region_editor.pyc (Python 3.12)
 
-__doc__ = '\nBlurRegionEditor — preview playback + blur + subtitle VI live.\n\n- Playback / scrub (OpenCV / ffmpeg)\n- Kéo / crop vùng blur che sub gốc\n- Overlay phụ đề VI: font, size, style nền, kéo thả vị trí\n- Sync state AppState (blur + sub)\n'
+'''
+BlurRegionEditor — preview playback + blur + subtitle VI live.
+
+- Playback / scrub (OpenCV / ffmpeg)
+- Kéo / crop vùng blur che sub gốc
+- Overlay phụ đề VI: font, size, style nền, kéo thả vị trí
+- Sync state AppState (blur + sub)
+'''
 from __future__ import annotations
 import hashlib
 import json
@@ -56,33 +63,17 @@ def _load_preview_media_cache(video_path = None):
         if meta_path.is_file():
             payload = json.loads(meta_path.read_text(encoding = 'utf-8'))
             if isinstance(payload, dict):
-                if not payload.get('version'):
-                    payload.get('version')
-                if int(0) == 1:
-                    if not payload.get('metadata'):
-                        payload.get('metadata')
-                    metadata = dict({ })
+                if int(payload.get('version') or 0) == 1:
+                    metadata = dict(payload.get('metadata') or { })
         image = None
         if thumb_path.is_file():
-            cached = Image.open(thumb_path)
-            image = cached.convert('RGB').copy()
             
-            try:
-                None(None, None)
-                return (metadata, image)
-                with None:
-                    if not None:
-                        pass
-                
-                try:
-                    continue
-                except Exception:
-                    exc = None
-                    logger.debug('preview media cache miss: %s', exc)
-                    del exc
-                    return None
-                    None = 
-                    del exc
+            with Image.open(thumb_path) as cached:
+                image = cached.convert('RGB').copy()
+        return (metadata, image)
+    except Exception as exc:
+        logger.debug('preview media cache miss: %s', exc)
+        return ({ }, None)
 
 
 
@@ -107,7 +98,18 @@ def _frame_to_worker_image(frame = None, *, max_side, fast):
         frame = np.ascontiguousarray(frame)
     return Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-_PreviewDecodeResult = <NODE:12>()
+@dataclass
+class _PreviewDecodeResult:
+    kind: str
+    generation: int
+    path: Path
+    t_s: float = 0.0
+    image: Image.Image | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    error: str = ''
+    cache_hit: bool = False
+    light: bool = False
+    timings: dict[str, float] = field(default_factory=dict)
 
 class _PreviewDecoderWorker:
     '''Single owner of VideoCapture; Tk only consumes already-decoded images.'''
@@ -128,30 +130,20 @@ class _PreviewDecoderWorker:
         self._thread.start()
 
     
-    def load(self, generation = None, path = None, t_s = None, max_side = ('generation', 'int', 'path', 'Path', 't_s', 'float', 'max_side', 'int', 'return', 'None')):
+    def load(self, generation: int, path: Path, t_s: float, max_side: int) -> None:
         self._latest_generation = generation
-        self._frame_lock
-        self._pending_frame = None
-        None(None, None)
+        
+        with self._frame_lock:
+            self._pending_frame = None
         self._commands.put(('load', generation, path, t_s, max_side))
         self._wake.set()
-        return None
-        with None:
-            if not None:
-                pass
-        continue
 
     
-    def request_frame(self = None, generation = None, path = None, t_s = ('generation', 'int', 'path', 'Path', 't_s', 'float', 'max_side', 'int', 'force_seek', 'bool', 'sequential', 'bool', 'light', 'bool', 'return', 'None'), *, max_side, force_seek, sequential, light):
-        self._frame_lock
-        self._pending_frame = (generation, path, t_s, max_side, force_seek, sequential, light)
-        None(None, None)
+    def request_frame(self, generation: int, path: Path, t_s: float, *, max_side: int, force_seek: bool, sequential: bool, light: bool) -> None:
+        
+        with self._frame_lock:
+            self._pending_frame = (generation, path, t_s, max_side, force_seek, sequential, light)
         self._wake.set()
-        return None
-        with None:
-            if not None:
-                pass
-        continue
 
     
     def close(self = None):
@@ -162,29 +154,26 @@ class _PreviewDecoderWorker:
     
     def unload(self = None, generation = None):
         self._latest_generation = generation
-        self._frame_lock
-        self._pending_frame = None
-        None(None, None)
+        
+        with self._frame_lock:
+            self._pending_frame = None
         self._commands.put(('unload', generation))
         self._wake.set()
-        return None
-        with None:
-            if not None:
-                pass
-        continue
 
     
     def _push(self = None, result = None):
         
-        try:
-            self.results.put_nowait(result)
-            return None
-        except queue.Full:
-            self.results.get_nowait()
-        except queue.Empty:
-            return None
-
-        continue
+        while True:
+            
+            try:
+                self.results.put_nowait(result)
+                return None
+            except queue.Full:
+                
+                try:
+                    self.results.get_nowait()
+                except queue.Empty:
+                    return None
 
     
     def _release(self = None):
@@ -197,15 +186,16 @@ class _PreviewDecoderWorker:
     # WARNING: Decompyle incomplete
 
     
-    def _handle_load(self, generation = None, path = None, t_s = None, max_side = ('generation', 'int', 'path', 'Path', 't_s', 'float', 'max_side', 'int', 'return', 'None')):
+    def _handle_load(self, generation: int, path: Path, t_s: float, max_side: int) -> None:
         started = time.perf_counter()
         timings = { }
         self._release()
         (metadata, cached_image) = _load_preview_media_cache(path)
-        if metadata:
-            metadata
-        cache_hit = bool(cached_image is not None)
+        cache_hit = bool(metadata or cached_image is not None)
         timings['cache_lookup'] = time.perf_counter() - started
+        
+        # Decompyle++ chỉ dịch được tới đây; toàn bộ nhánh nạp frame còn lại đã mất.
+        raise NotImplementedError('chưa khôi phục từ bytecode: blur_region_editor._PreviewDecoderWorker._handle_load')
     # WARNING: Decompyle incomplete
 
     

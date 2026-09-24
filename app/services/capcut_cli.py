@@ -43,7 +43,16 @@ class CapCutCliError(RuntimeError):
     '''Lỗi có thông điệp đọc được cho người dùng cuối.'''
     pass
 
-CapCutBuildResult = <NODE:12>()
+@dataclass
+class CapCutBuildResult:
+    ok: bool
+    project_name: str = ''
+    project_dir: Path | None = None
+    n_captions: int = 0
+    n_audio: int = 0
+    message: str = ''
+    warnings: list[str] = field(default_factory = list)
+
 
 def node_path():
     return shutil.which('node')
@@ -54,17 +63,14 @@ def npx_path():
 
 
 def cli_spec():
-    if not os.environ.get('MUMU_CAPCUT_CLI'):
-        os.environ.get('MUMU_CAPCUT_CLI')
-    return DEFAULT_CLI_SPEC.strip()
+    return (os.environ.get('MUMU_CAPCUT_CLI') or DEFAULT_CLI_SPEC).strip()
 
 
 def default_drafts_root():
-    if not os.environ.get('MUMU_CAPCUT_DRAFTS'):
-        os.environ.get('MUMU_CAPCUT_DRAFTS')
-    override = ''.strip()
+    override = (os.environ.get('MUMU_CAPCUT_DRAFTS') or '').strip()
     if override:
         return Path(override)
+    return WINDOWS_DRAFTS_ROOT
 
 
 def capcut_is_running():
@@ -77,17 +83,11 @@ def capcut_is_running():
         return False
     
     try:
-        if not subprocess.run([
+        out = subprocess.run([
             'tasklist',
             '/FI',
             'IMAGENAME eq CapCut.exe',
-            '/NH'], capture_output = True, text = True, timeout = 20, creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout:
-            subprocess.run([
-                'tasklist',
-                '/FI',
-                'IMAGENAME eq CapCut.exe',
-                '/NH'], capture_output = True, text = True, timeout = 20, creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout
-        out = ''
+            '/NH'], capture_output = True, text = True, timeout = 20, creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout or ''
         return 'capcut.exe' in out.casefold()
     except Exception:
         return False
@@ -119,21 +119,11 @@ def _kill_tree(pid = None):
                 '/PID',
                 str(pid)], capture_output = True, text = True, timeout = 15)
             return None
-            
-            try:
-                os.killpg(os.getpgid(pid), 9)
-                return None
-            except Exception:
-                exc = None
-                logger.debug('kill capcut-cli %s: %s', pid, exc)
-                exc = None
-                del exc
-                return None
-                exc = None
-                del exc
-
-
-
+        os.killpg(os.getpgid(pid), 9)
+        return None
+    except Exception as exc:
+        logger.debug('kill capcut-cli %s: %s', pid, exc)
+        return None
 
 class CapCutCliRunner:
     '''Chạy capcut-cli, huỷ được giữa chừng.
@@ -143,32 +133,39 @@ class CapCutCliRunner:
     được cho cả render MP4 lẫn tạo project CapCut.
     '''
     
-    def __init__(self = None, *, cancel_event, drafts_root):
-        pass
-    # WARNING: Decompyle incomplete
+    def __init__(self, *, cancel_event = None, drafts_root = None):
+        self._cancel = cancel_event if cancel_event is not None else threading.Event()
+        self.drafts_root = Path(drafts_root) if drafts_root else default_drafts_root()
+        self._proc = None
+        self._first_run_done = False
 
     
-    def request_cancel(self = None):
+    def request_cancel(self):
         self._cancel.set()
         proc = self._proc
-    # WARNING: Decompyle incomplete
+        if proc is not None and proc.poll() is None:
+            _kill_tree(int(proc.pid))
 
     
-    def is_cancelled(self = None):
+    def is_cancelled(self):
         return self._cancel.is_set()
 
     
-    def _raise_if_cancelled(self = None):
+    def _raise_if_cancelled(self):
         if self._cancel.is_set():
             raise CapCutCliError('Đã dừng theo yêu cầu')
 
     
-    def _run(self = None, args = None):
+    def _run(self, args):
         self._raise_if_cancelled()
         npx = npx_path()
         if not npx:
             raise CapCutCliError('Không tìm thấy Node.js/npx trong PATH.\nCài Node.js ≥ 18 (https://nodejs.org) rồi mở lại app.')
-        cmd = None
+        cmd = [
+            npx,
+            '--yes',
+            cli_spec(),
+            *args]
         timeout = COMMAND_TIMEOUT if self._first_run_done else FIRST_RUN_TIMEOUT
         logger.info('capcut-cli: %s', ' '.join(args[:4]))
         kwargs = {
@@ -181,18 +178,37 @@ class CapCutCliRunner:
             kwargs['creationflags'] = getattr(subprocess, 'CREATE_NO_WINDOW', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
         else:
             kwargs['start_new_session'] = True
-    # WARNING: Decompyle incomplete
+        self._proc = subprocess.Popen(cmd, **kwargs)
+        
+        try:
+            (out, err) = self._proc.communicate(timeout = timeout)
+            code = self._proc.returncode
+        except subprocess.TimeoutExpired:
+            _kill_tree(int(self._proc.pid))
+            raise CapCutCliError(f'''capcut-cli quá thời gian {timeout}s''')
+        finally:
+            self._proc = None
+
+        self._first_run_done = True
+        if self._cancel.is_set():
+            raise CapCutCliError('Đã dừng theo yêu cầu')
+        payload = _first_json_object(out) or _first_json_object(err) or { }
+        if code != 0 or payload.get('error'):
+            detail = str(payload.get('error') or '').strip()
+            if not detail:
+                detail = ((err or out or '').strip() or f'''exit {code}''')[-500:]
+            raise CapCutCliError(_friendly(detail))
+        return payload
 
     
-    def build_project(self = None, *, name, video, srt, voice, voice_volume, bgm_paths, bgm_clips, bgm_volume, subtitle_only, progress):
+    def build_project(self, *, name, video = None, srt = None, voice = None, voice_volume = 1.0, bgm_paths = (), bgm_clips = (), bgm_volume = 0.15, subtitle_only = False, progress = None):
         '''Tạo project CapCut: video nền + phụ đề + lồng tiếng + nhạc nền (hoặc chỉ phụ đề để tạo voice TTS).'''
-        pass
-    # WARNING: Decompyle incomplete
+        # Thân hàm này dài ~700 instruction trong dis và bản decompile chỉ còn `pass`
+        # -> cần luồng khôi phục hành vi dựng lại theo bytecode, không đoán ở lượt này.
+        raise NotImplementedError('chưa khôi phục từ bytecode: capcut_cli.CapCutCliRunner.build_project')
 
     
-    def _add_audio(self = None, project_dir = None, audio = None, volume = None, track = {
-        'start_s': 0,
-        'duration_s': None }, *, start_s, duration_s):
+    def _add_audio(self, project_dir, audio, volume, track, *, start_s = 0.0, duration_s = None):
         duration = _probe_duration_s(audio)
         if duration <= 0:
             raise CapCutCliError(f'''không đọc được thời lượng {audio.name}''')
@@ -201,10 +217,10 @@ class CapCutCliRunner:
             'add-audio',
             str(project_dir),
             str(audio.resolve()),
-            f'''{max(0, start_s):.3f}''',
+            f'''{max(0.0, start_s):.3f}''',
             f'''{use_duration:.3f}''',
             '--volume',
-            f'''{max(0, min(1, volume)):.3f}''',
+            f'''{max(0.0, min(1.0, volume)):.3f}''',
             '--track-name',
             track])
 
@@ -220,30 +236,33 @@ def _first_json_object(text = None):
             continue
         if not line.endswith('}'):
             continue
-        parsed = json.loads(line)
+        
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
         if not isinstance(parsed, dict):
             continue
-        
-        return text.splitlines(), parsed
+        return parsed
     return None
-    except json.JSONDecodeError:
-        continue
 
 
 def _friendly(detail = None):
     low = detail.casefold()
     if 'capcut.exe is running' in low:
         return 'CapCut đang mở — hãy ĐÓNG CapCut rồi bấm lại.\n\nGhi draft khi app đang chạy sẽ bị CapCut ghi đè.'
-    if 'enoent' in low and 'not recognized' in low or 'cannot find' in low:
+    if 'enoent' in low or 'not recognized' in low or 'cannot find' in low:
         return f'''Không chạy được capcut-cli. Kiểm tra Node.js ≥ 18 đã cài và có mạng cho lần tải gói đầu tiên.\n\nChi tiết: {detail}'''
-    if None in low and 'guard' in low:
+    if 'version' in low and 'guard' in low:
         return f'''Phiên bản CapCut trên máy nằm ngoài dải capcut-cli hỗ trợ (6.x–9.x).\nChi tiết: {detail}'''
+    return detail
 
 
 def _probe_duration_s(path = None):
     ffprobe = shutil.which('ffprobe')
     if not ffprobe:
-        return 0
+        return 0.0
     
     try:
         out = subprocess.run([
@@ -255,12 +274,8 @@ def _probe_duration_s(path = None):
             '-of',
             'default=noprint_wrappers=1:nokey=1',
             str(path)], capture_output = True, text = True, timeout = 60, creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)).stdout
-        if not out:
-            out
-        if not '0'.strip():
-            '0'.strip()
-        return max(0, float(0))
+        return max(0.0, float(((out or '0').strip() or 0)))
     except Exception:
-        return 0
+        return 0.0
 
 

@@ -26,6 +26,21 @@ python tools/check_source.py --only app/services/<module>.py --damaged
 python tests/run_tests.py <module>
 ```
 
+`compare_bytecode.py` là cổng mạnh nhất: biên dịch file trong repo rồi so **từng code
+object** với `.pyc` đã phát hành (dòng opname+arg, tên biến, hằng số đệ quy). Khớp ở đây
+nghĩa là hành vi giống hệt — không cần chạy, không cần gọi mạng, và bắt được cả mấy chỗ
+decompiler dịch sai mà vẫn parse được.
+
+```bash
+python tools/compare_bytecode.py app/services/<module>.py   # 1 file
+python tools/compare_bytecode.py --all                      # đo cả repo, xếp theo chỗ lệch
+```
+
+Kỹ thuật đáng nhớ: `compile()` **kế thừa future flags của module đang gọi**, nên tool phải
+truyền `dont_inherit=True`; nếu không thì mọi file không có
+`from __future__ import annotations` bị báo lệch `CO_FUTURE_ANNOTATIONS` giả (đã mất một
+vòng debug vì chuyện này, và suýt kết luận sai rằng một file đang khớp là lệch 39 chỗ).
+
 ### Dò hành vi
 
 ```bash
