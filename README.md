@@ -68,6 +68,9 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 ### Yêu cầu
 - Windows 10 / 11, Python 3.10 – 3.12 (bản phát hành dùng 3.12).
 - FFmpeg có trên `PATH` (bắt buộc để render video).
+- VideOCR (PaddleOCR) cho tính năng OCR phụ đề cứng: app tự tìm
+  `videocr-cli.exe` ở `C:\Program Files\VideOCR`, `%LOCALAPPDATA%\Programs\VideOCR`
+  hoặc `PATH`; không có thì chỉ riêng mục OCR báo lỗi, các phần khác vẫn chạy.
 
 ### Chạy thử
 ```bash
