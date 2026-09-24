@@ -31,3 +31,7 @@ venv.bak/
 .idea/
 output/
 logs/
+
+# Bộ test chỉ để chạy nội bộ, không phát hành kèm repo
+# (481 test đối chiếu bytecode, có mô tả chi tiết nội trình của engine).
+tests/

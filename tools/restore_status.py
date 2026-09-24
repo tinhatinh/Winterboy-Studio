@@ -138,7 +138,9 @@ def main():
     for rel in sorted(done):
         add(f'- `{rel}`')
     add('')
-    add('Kiểm chứng lại: `python tools/compare_bytecode.py --all` và `python tests/run_tests.py`.')
+    add('Kiểm chứng lại: `python tools/compare_bytecode.py --all` (bao nhiêu module khớp')
+    add('bytecode 100%) và `python tools/check_source.py --damaged` (còn bao nhiêu file chưa')
+    add('parse được). Bộ test đối chiếu không phát hành kèm repo này.')
 
     text = '\n'.join(lines) + '\n'
     if args.write:

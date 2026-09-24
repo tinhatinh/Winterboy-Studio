@@ -87,7 +87,7 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 3. **Kiểm tra mã nguồn trước khi sửa**:
    ```bash
    python tools/check_source.py --damaged --parity   # cổng kiểm tổng
-   python tests/run_tests.py                         # bộ test đối chiếu
+   python tools/compare_bytecode.py --all            # bao nhiêu module khớp bytecode
    ```
 4. **Khởi chạy ứng dụng**:
    ```bash
@@ -97,88 +97,8 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
    Tính tới bản này, `app/ui/main_window.py` mới khôi phục được 1/207 code object
    nên cửa sổ chính còn trống; `import main` thì OK nhưng nạp `app.ui.control_panel`
    sẽ fail. Muốn dùng ngay, tải Release zip ở mục trên. Muốn đóng góp, hãy sửa các
-   module theo quy trình dưới rồi chạy `tools/audit_installed_app.py` — tool này dựng
-   thật cửa sổ của **bản đã cài** nên bắt được cả lỗi mà `import` không lộ.
-
-### ⚠️ Trạng thái mã nguồn, nói thẳng
-
-Repo này được **dịch ngược từ bytecode** (`.pyc`) của bản đã phát hành bằng
-Decompyle++, không phải mã gốc tác giả viết. Hệ quả thật sự:
-
-- Một số file ra mã **không phải Python hợp lệ** (`SrtCue = <NODE:12>()`, `None =`
-  trong `except`, `getattr(...) = ...`).
-- Nguy hiểm hơn, nhiều hàm **parse bình thường nhưng chạy sai** — ví dụ đã bắt được:
-  `duration_s` mất `max(0.05, ...)`, `record()` mất giá trị mặc định của `save` nên
-  mọi lời gọi nổ `TypeError`, `file_dependency` mất vòng đọc theo khối.
-- Vì vậy "file nằm trong repo" ≠ "file đó chạy được như bản Release".
-
-Cách làm việc đang dùng: **lấy bytecode làm chuẩn**, không đoán.
-`tools/compare_bytecode.py` biên dịch file trong repo rồi so từng code object với
-`.pyc` đã phát hành — khớp ở tầng instruction thì hành vi chắc chắn giống, không cần
-gọi mạng. Quy trình đầy đủ ở [`docs/restore_from_bytecode.md`](docs/restore_from_bytecode.md).
-
-Số liệu thay đổi liên tục trong lúc khôi phục, nên repo không ghi cứng. Muốn biết
-tình trạng hiện tại, chạy đúng hai lệnh này:
-
-```bash
-python tools/compare_bytecode.py --all    # dòng đầu: bao nhiêu module khớp bytecode 100%
-python tests/run_tests.py                 # dòng cuối: bao nhiêu test pass/fail
-```
-
-`tools/check_source.py` cho biết còn bao nhiêu file chưa parse được.
-
-Nếu bạn chỉ muốn **dùng**, tải Release zip ở mục trên. Nếu muốn **đóng góp mã nguồn**,
-sửa theo quy trình trong `docs/restore_from_bytecode.md` và chạy hai cổng kiểm ở bước 3
-trước khi mở PR — sửa xong mà `compare_bytecode` vẫn báo lệch thì coi như chưa xong.
-
----
-
-## 🗣️ Danh sách giọng CapCut (Voice catalog)
-
-Engine CapCut TTS đọc kho giọng từ **`app/services/capcut_voices.json`**. Có file là dropdown
-trong ứng dụng hiện đầy đủ giọng, không cần sửa code; thiếu file thì chỉ còn 1 giọng mặc định.
-
-Bản đang có trong repo: **127 giọng / 10 ngôn ngữ** (en-US 40, **vi-VN 24**, ja-JP 19, zh-CN 15,
-es-ES 9, th-TH 6, id-ID 4, pt-BR 4, de-DE 3, fr-FR 3), xếp tiếng Việt lên đầu.
-
-24 giọng tiếng Việt — `voice_type:resource_id` nằm trong file JSON:
-
-> Alex Đại Đế · Ban Mai · Bản Tin 1 · Bản Tin nữ · Cô Gái Hoạt Ngôn · Giọng Bé · Giọng Gái Mới Lớn ·
-> Giọng Nam Trầm · Giọng Nữ Phổ Thông · Kenny Đại Đế · Mai · Nam bản tin · Nhỏ Ngọt Ngào ·
-> Quên Tên Tự Test · Review Phim 2 · Review Phim 3 · Review Phim 4 · Review Phim new · Robot VN ·
-> Sunny Idol · Thanh Niên Tự Tin · Việt Méo · Hoai My · Nam Minh
-
-Dòng định dạng mỗi phần tử (thừa khoá thì engine bỏ qua):
-
-```json
-{
-  "display_name": "Nhỏ Ngọt Ngào",
-  "voice_type": "BV421_vivn_streaming",
-  "resource_id": "7252594014782755330",
-  "lang": "vi-VN",
-  "lan": "vi",
-  "captured_at": "2026-04-16T16:54:58.535653",
-  "verified": true
-}
-```
-
-### Kiểm chứng giọng nào thực sự sinh được audio
-
-Catalog chỉ là danh sách do CapCut trả về; có giọng bị gắn quyền riêng nên gọi vẫn nhận `failed`
-(Hoai My và Nam Minh trong danh sách trên là hai giọng như vậy, đã đánh dấu `"verified": false`).
-Chạy tool để dò lại và ghi kết quả vào file:
-
-```bash
-python tools/verify_capcut_voices.py --lang vi --write
-# bản đã cài đặt (bỏ qua mã nguồn chưa hoàn chỉnh):
-python tools/verify_capcut_voices.py --lang vi --write --engine "C:/WinterboyStudio/_internal"
-```
-
-### Lưu ý khi build
-
-`build.bat` đã truyền `--add-data "app/services/capcut_voices.json;app/services"` để file nằm đúng
-chỗ `_internal/app/services/` trong bản đóng gói. Ngoài ra cần device profile thật ở
-`~/.winterboy/capcut_device.json`, nếu không CapCut sẽ trả `shark block only` (chống bot).
+   module rồi chạy `tools/audit_installed_app.py` — tool dựng thật cửa sổ của **bản đã
+   cài** nên bắt được cả lỗi mà `import` không lộ.
 
 ---
 
