@@ -3,7 +3,7 @@ import tkinter as tk
 import websocket
 import json
 import os
-from tkinter.ttk import ttk
+import tkinter.ttk as ttk
 
 class ElevenLabsApiError(Exception):
     '''

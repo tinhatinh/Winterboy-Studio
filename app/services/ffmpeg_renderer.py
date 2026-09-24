@@ -33,27 +33,34 @@ ProgressCb = Callable[([
 _FAST_VISUAL_CACHE_VERSION = 'fast-visual-v3-hd-blur'
 _VISUAL_OPTION_KEYS = ('ratio', 'use_gpu', 'flip_h', 'speed', 'zoom', 'trim_enable', 'trim_head_s', 'trim_tail_s', 'rotate', 'brightness', 'contrast', 'saturation', 'bypass_ultimate', 'bypass_subpixel', 'bypass_noise', 'bypass_colorspace', 'bypass_zoompan', 'enable_subtitle', 'sub_font', 'sub_size', 'sub_opacity', 'sub_bg_style', 'sub_bg_enable', 'sub_x', 'sub_y', 'sub_box_w', 'sub_box_h', 'sub_pad_x', 'sub_pad_y', 'sub_delay', 'sub_color', 'sub_stroke_color', 'sub_stroke_width', 'sub_letter_spacing', 'sub_karaoke', 'sub_text_effect', 'sub_color_preset', 'blur_enable', 'blur_x', 'blur_y', 'blur_w', 'blur_h', 'blur_regions', 'blur_strength', 'blur_feather', 'blur_opacity', 'blur_canvas_w', 'blur_canvas_h', 'logo_enable', 'logo_path', 'logo_size', 'logo_opacity', 'logo_motion', 'logo_position', 'logo_motion_speed', 'logo_delay', 'static_text_enable', 'static_text', 'static_font', 'static_size', 'static_opacity', 'static_motion', 'static_position', 'static_motion_speed', 'static_delay', 'watermark_enable', 'watermark_text', 'watermark_opacity', 'watermark_motion', 'watermark_position', 'watermark_motion_speed', 'watermark_delay', 'brand_motion_cycle', 'brand_safe_margin', 'brand_safe_zone', 'video_codec')
 
-def _hidden_process_kwargs(*, new_process_group):
+def _hidden_process_kwargs(*, new_process_group = False):
     '''Keep FFmpeg/FFprobe subprocesses invisible on Windows.'''
     if not sys.platform.startswith('win'):
         return { }
-    creationflags = None(subprocess, 'CREATE_NO_WINDOW', 134217728)
+    creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 134217728)
     if new_process_group:
         creationflags |= getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 512)
     startupinfo = subprocess.STARTUPINFO()
-    getattr(subprocess, 'SW_HIDE', 0) = startupinfo, startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1), .dwFlags
+    startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1)
+    startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
     return {
         'creationflags': creationflags,
         'startupinfo': startupinfo }
 
 
-def _kill_process_tree(pid = None):
+def _kill_process_tree(pid: int) -> None:
     '''Dừng process + con (ffmpeg filtergraph) trên Windows/Unix.'''
-    if pid <= 0:
-        return None
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): bản decompile mất thân sau dòng kiểm tra pid.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer._kill_process_tree')
 
-MP4RenderResult = <NODE:12>()
+
+@dataclass
+class MP4RenderResult:
+    ok: bool
+    output_path: Path | None = None
+    manifest_path: Path | None = None
+    duration_s: float = 0.0
+    message: str = ''
 
 def _ffmpeg():
     value = shutil.which('ffmpeg')
@@ -69,19 +76,16 @@ def _ffprobe():
     return value
 
 
-def _number(value = None, default = None):
+def _number(value: Any, default: float = 0.0) -> float:
     
     try:
         return float(value)
     except (TypeError, ValueError):
-        return 
+        return default
 
 
-
-def _brand_motion_kind(value = None):
-    if not value:
-        value
-    raw = str('').strip().casefold()
+def _brand_motion_kind(value: Any) -> str:
+    raw = str(value or '').strip().casefold()
     if 'chéo' in raw or 'diagonal' in raw:
         return 'diagonal'
     if 'trái' in raw or 'horizontal' in raw:
@@ -91,11 +95,9 @@ def _brand_motion_kind(value = None):
     return 'none'
 
 
-def _brand_position_kind(value = None):
-    if not value:
-        value
-    raw = str('').strip().casefold()
-    if raw and 'mặc định' in raw or 'default' in raw:
+def _brand_position_kind(value: Any) -> 'tuple[str, str] | None':
+    raw = str(value or '').strip().casefold()
+    if not raw or 'mặc định' in raw or 'default' in raw:
         return None
     horizontal = 'center'
     vertical = 'middle'
@@ -105,85 +107,78 @@ def _brand_position_kind(value = None):
         horizontal = 'right'
     if 'trên' in raw or 'top' in raw:
         vertical = 'top'
-        return (horizontal, vertical)
-    if None in raw or 'bottom' in raw:
+    elif 'dưới' in raw or 'bottom' in raw:
         vertical = 'bottom'
     return (horizontal, vertical)
 
 
-def _brand_fixed_position(position = None, *, default_x, default_y, canvas_w, canvas_h, item_w, item_h, margin):
+def _brand_fixed_position(position: Any, *, default_x: str, default_y: str, canvas_w: str, canvas_h: str, item_w: str, item_h: str, margin: float) -> 'tuple[str, str, tuple[str, str] | None]':
     kind = _brand_position_kind(position)
-# WARNING: Decompyle incomplete
-
-
-def _brand_motion_expr(motion = None, *, delay, default_x, default_y, canvas_w, canvas_h, item_w, item_h, cycle, margin, safe_zone, position):
-    '''Return smooth, frame-evaluated x/y expressions for Brand overlays.'''
-    kind = _brand_motion_kind(motion)
-    if not cycle:
-        cycle
-    cycle = max(2, min(3600, float(8)))
-    if not margin:
-        margin
-    margin = max(0, min(500, float(0)))
-    phase = f'''(0.5-0.5*cos(2*PI*(t-{max(0, delay):.3f})/{cycle:.3f}))'''
-    (fixed_x, fixed_y, position_kind) = _brand_fixed_position(position, default_x = default_x, default_y = default_y, canvas_w = canvas_w, canvas_h = canvas_h, item_w = item_w, item_h = item_h, margin = margin)
+    if kind is None:
+        return (default_x, default_y, None)
+    (horizontal, vertical) = kind
     m = f'''{margin:.3f}'''
-    min_y = m
-    max_y = f'''{canvas_h}-{item_h}-{m}'''
-    if not safe_zone:
-        safe_zone
-    zone = str('').casefold()
-    if 'nửa trên' in zone or 'upper' in zone:
-        max_y = f'''{canvas_h}/2-{item_h}-{m}'''
-    elif 'nửa dưới' in zone or 'lower' in zone:
-        min_y = f'''{canvas_h}/2+{m}'''
-    phase_x = phase
-    phase_y = phase
-# WARNING: Decompyle incomplete
+    x = {
+        'left': m,
+        'center': f'''({canvas_w}-{item_w})/2''',
+        'right': f'''{canvas_w}-{item_w}-{m}''' }[horizontal]
+    y = {
+        'top': m,
+        'middle': f'''({canvas_h}-{item_h})/2''',
+        'bottom': f'''{canvas_h}-{item_h}-{m}''' }[vertical]
+    return (x, y, kind)
 
 
-def _brand_effective_cycle(base_cycle = None, motion_speed = None):
+def _brand_motion_expr(motion: Any, *, delay: float, default_x: str, default_y: str, canvas_w: str, canvas_h: str, item_w: str, item_h: str, cycle: float = 8.0, margin: float = 32.0, safe_zone: Any = 'Toàn khung', position: Any = 'Mặc định') -> 'tuple[str, str]':
+    '''Return smooth, frame-evaluated x/y expressions for Brand overlays.'''
+    # TODO(khôi phục hành vi): bản decompile dừng ở `phase_x = phase`; phần sinh
+    # biểu thức x/y theo từng kiểu chuyển động (~250 instruction) mất hẳn.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer._brand_motion_expr')
+
+
+def _brand_effective_cycle(base_cycle: Any, motion_speed: Any) -> float:
     '''Đổi tốc độ phần trăm của một lớp thành chu kỳ chuyển động thực tế.'''
-    cycle = max(2, min(60, _number(base_cycle, 8)))
-    speed = max(0, min(100, _number(motion_speed, 100))) / 100
-    if speed <= 0:
+    cycle = max(2.0, min(60.0, _number(base_cycle, 8.0)))
+    speed = max(0.0, min(100.0, _number(motion_speed, 100.0))) / 100.0
+    if speed <= 0.0:
         return cycle
-    return None(3600, cycle / speed)
+    return min(3600.0, cycle / speed)
 
 
-def _brand_motion_at_speed(motion = None, motion_speed = None):
+def _brand_motion_at_speed(motion: Any, motion_speed: Any) -> Any:
     '''0% đứng yên hoàn toàn; các mức còn lại giữ loại chuyển động đã chọn.'''
-    if _number(motion_speed, 100) > 0:
+    if _number(motion_speed, 100.0) > 0.0:
         return motion
+    return 'Đứng yên'
 
 
-def _bool(value = None):
+def _bool(value: Any) -> bool:
     return bool(value)
 
 
-def _even(n = None):
+def _even(n: int) -> int:
     '''Làm số chẵn ≥ 2 (libx264/yuv420p).'''
     n = int(n)
     if n < 2:
         return 2
     if n % 2 == 0:
         return n
-    return None - 1
+    return n - 1
 
 
-def probe_video_size(path = None):
+def probe_video_size(path: Path) -> 'tuple[int, int]':
     '''Trả về (width, height) stream video đầu; fallback 1920x1080.'''
-    pass
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): thân hàm (lệnh ffprobe + parse JSON) mất trong bản decompile.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.probe_video_size')
 
 
-def probe_video_bitrate(path = None):
+def probe_video_bitrate(path: Path) -> int:
     '''Return the first video stream bitrate in bits/s, or zero when absent.'''
-    pass
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): thân hàm (lệnh ffprobe + parse JSON) mất trong bản decompile.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.probe_video_bitrate')
 
 
-def _path_fingerprint(path = None, *, content_hash):
+def _path_fingerprint(path: 'str | Path | None', *, content_hash: bool = False) -> 'dict[str, Any] | None':
     if not path:
         return None
     p = Path(path).expanduser()
@@ -191,7 +186,7 @@ def _path_fingerprint(path = None, *, content_hash):
         return {
             'path': str(p.resolve()),
             'missing': True }
-    stat = None.stat()
+    stat = p.stat()
     item = {
         'path': str(p.resolve()),
         'size': stat.st_size,
@@ -201,24 +196,23 @@ def _path_fingerprint(path = None, *, content_hash):
     return item
 
 
-def _visual_cache_key(video = None, srt_path = None, options = None):
+def _visual_cache_key(video: Path, srt_path: 'str | Path | None', options: 'dict[str, Any]') -> str:
     '''Fingerprint every input that can change a baked video pixel.'''
-    pass
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): thân hàm (gom _VISUAL_OPTION_KEYS + fingerprint) mất
+    # trong bản decompile.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer._visual_cache_key')
 
 
 def _visual_cache_root():
     return Path(tempfile.gettempdir()) / 'mumu_ffmpeg_visual_cache'
 
 
-def _prune_visual_cache(root = None, keep = None, *, max_files, max_bytes):
+def _prune_visual_cache(root: Path, keep: Path, *, max_files: int = 8, max_bytes: int = 20000000000) -> None:
     '''Bound the opt-in cache so long videos cannot fill the system drive.'''
     
     try:
-        files = (lambda .0: pass# WARNING: Decompyle incomplete
-)(root.glob('*.mp4')(), key = (lambda p: p.stat().st_mtime_ns), reverse = True)
-        total = (lambda .0: pass# WARNING: Decompyle incomplete
-)(files())
+        files = sorted((p for p in root.glob('*.mp4') if p.is_file()), key = (lambda p: p.stat().st_mtime_ns), reverse = True)
+        total = sum(p.stat().st_size for p in files)
         kept = 0
         for path in files:
             if path == keep:
@@ -226,44 +220,24 @@ def _prune_visual_cache(root = None, keep = None, *, max_files, max_bytes):
                 continue
             size = path.stat().st_size
             if kept >= max_files or total > max_bytes:
-                path.unlink()
-                total -= size
                 
                 try:
+                    path.unlink()
+                    total -= size
                     continue
-                    kept += 1
+                except OSError:
                     continue
-                    return None
-                    except OSError:
-                        sorted
-                        
-                        try:
-                            continue
-                            
-                            try:
-                                pass
-                            except OSError:
-                                exc = None
-                                logger.debug('visual cache prune failed: %s', exc)
-                                exc = None
-                                del exc
-                                return None
-                                exc = None
-                                del exc
+
+            kept += 1
+    except OSError as exc:
+        logger.debug('visual cache prune failed: %s', exc)
+        return None
 
 
-
-
-
-
-def _fast_nvenc_args(video = None, width = None, height = None, codec = ('h264',)):
+def _fast_nvenc_args(video: Path, width: int, height: int, codec: str = 'h264') -> 'list[str]':
     '''Fast NVENC preset with high visual clarity and resolution-aware bitrate.'''
-    if not codec:
-        codec
-    c = 'h264'.lower().strip()
-    if not 'hevc' in c:
-        'hevc' in c
-    is_hevc = '265' in c
+    c = (codec or 'h264').lower().strip()
+    is_hevc = 'hevc' in c or '265' in c
     is_av1 = 'av1' in c
     pixels = max(1, width * height)
     if pixels <= 921600:
@@ -344,22 +318,20 @@ def _ass_text(text = None, *, font_name, font_size, max_width_px, letter_spacing
     return wrapped.replace('\\', '\\\\').replace('{', '\\{').replace('}', '\\}').replace('\n', '\\N')
 
 
-def _font_name(name = None):
-    if not name:
-        name
-    return 'Arial'.replace(',', ' ')
+def _font_name(name: str) -> str:
+    return (name or 'Arial').replace(',', ' ')
 
 
-def _ass_filter(ass_path = None, font_name = None):
+def _ass_filter(ass_path: Path, font_name: str) -> str:
     """Ask libass to scan the selected system font's folder when available."""
     ass_arg = _escape_filter_path(ass_path)
     font_path = resolve_system_font(font_name)
     if font_path:
-        return f'''ass=\'{ass_arg}\':fontsdir=\'{_escape_filter_path(font_path.parent)}\''''
-    return f'''{ass_arg}\''''
+        return f"ass='{ass_arg}':fontsdir='{_escape_filter_path(font_path.parent)}'"
+    return f"ass='{ass_arg}'"
 
 
-def _stage_ass_for_libass(source = None):
+def _stage_ass_for_libass(source: Path) -> Path:
     '''Copy ASS to a short ASCII path before FFmpeg/libass reads it.
 
     Some Windows libass builds still open subtitle files through ``fopen`` and
@@ -367,59 +339,9 @@ def _stage_ass_for_libass(source = None):
     The original ASS remains in the job workspace; this compact copy is only
     an input bridge for the FFmpeg filter.
     '''
-    source = Path(source)
-    payload = source.read_bytes()
-    digest = hashlib.sha256(payload).hexdigest()[:20]
-    root = Path(tempfile.gettempdir()) / 'mumu_ass'
-    root.mkdir(parents = True, exist_ok = True)
-    staged = root / f'''{digest}.ass'''
-    needs_copy = True
-    
-    try:
-        if not not staged.is_file():
-            not staged.is_file()
-        needs_copy = staged.stat().st_size != len(payload)
-        if needs_copy:
-            building = root / f'''{digest}.{threading.get_ident()}.{time.time_ns()}.tmp'''
-            
-            try:
-                building.write_bytes(payload)
-                building.replace(staged)
-                
-                try:
-                    if building.exists():
-                        building.unlink()
-                    cutoff = time.time() - 604800
-                    
-                    try:
-                        for candidate in root.glob('*.ass'):
-                            if not candidate != staged:
-                                continue
-                                
-                                try:
-                                    if not candidate.stat().st_mtime < cutoff:
-                                        continue
-                                        
-                                        try:
-                                            candidate.unlink()
-                                            continue
-                                            logger.info('ASS staged for libass · original_len=%d · staged_len=%d · %s', len(str(source)), len(str(staged)), staged)
-                                            return staged
-                                            except OSError:
-                                                needs_copy = True
-                                                continue
-                                            except OSError:
-                                                continue
-                                            if building.exists():
-                                                building.unlink()
-                                        except OSError:
-                                            continue
-
-
-
-
-
-
+    # TODO(khôi phục hành vi): phần ghi file tạm + dọn file cũ (~500 instruction) bị
+    # decompile thành nhánh lồng nhau không đọc được, cần dựng lại từ dis.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer._stage_ass_for_libass')
 
 
 def _short_ass_work_path(srt_path = None, output = None):
@@ -431,30 +353,27 @@ def _short_ass_work_path(srt_path = None, output = None):
     return root / f'''render_{digest}.ass'''
 
 
-def write_ass_subtitles(srt_path = None, out_path = None, options = None, *, trim_head_s):
+def write_ass_subtitles(srt_path: Path, out_path: Path, options: 'dict[str, Any]', *, trim_head_s: float = 0.0) -> Path:
     '''Sinh file ASS.
 
     ``trim_head_s`` là số giây đã bị cắt ở đầu video. Timestamp trong SRT nằm
     trên timeline nguồn, còn MP4 sau ``trim`` + ``setpts=PTS-STARTPTS`` bắt đầu
     lại từ 0, nên phải trừ offset này để phụ đề không trễ đúng bằng đoạn cắt.
     '''
-    pass
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): ~2900 instruction sinh header/style/mọi event ASS —
+    # bản decompile chỉ còn `pass`. Hàm này cần lượt khôi phục hành vi riêng.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.write_ass_subtitles')
 
 
-def _atempo_filters(rate = None):
-    rate = max(0.25, min(8, rate))
+def _atempo_filters(rate: float) -> 'list[str]':
+    rate = max(0.25, min(8.0, rate))
     parts = []
-    if rate > 2:
+    while rate > 2.0:
         parts.append('atempo=2.0')
-        rate /= 2
-        if rate > 2:
-            continue
-    if rate < 0.5:
+        rate /= 2.0
+    while rate < 0.5:
         parts.append('atempo=0.5')
         rate /= 0.5
-        if rate < 0.5:
-            continue
     parts.append(f'''atempo={rate:.5f}''')
     return parts
 
@@ -483,92 +402,44 @@ def detect_system_gpu(force_rescan = None):
     return detect_gpu_encoder()
 
 
-def _probe_encoder_hardware(ffmpeg_bin = None, enc = None, timeout = None, retries = (8, 1)):
-    '''Kiểm tra thực tế encoder phần cứng có chạy được trên máy không (1 frame 256x256).
-
-    Hỗ trợ timeout lên đến 8s và retry để đảm bảo card rời (NVIDIA Optimus) kịp thức tỉnh từ D3 state.
-    '''
-    pass
-
-
-def _probe_encoder_hardware(ffmpeg_bin = None, enc = None, timeout = None, retries = (6, 1)):
+def _probe_encoder_hardware(ffmpeg_bin: str, enc: str, timeout: int = 6, retries: int = 1) -> bool:
     '''Kiểm tra thực tế encoder phần cứng có chạy được trên máy không (có memoization).'''
-    if enc in _CACHED_PROBED_ENCODERS:
-        return _CACHED_PROBED_ENCODERS[enc]
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): chạy ffmpeg 1 frame 256x256 + retry (~200 instruction),
+    # bản decompile chỉ còn nhánh kiểm tra cache đầu tiên.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer._probe_encoder_hardware')
 
 
-def get_gpu_device_name(enc = None):
+def get_gpu_device_name(enc: 'str | None' = None) -> str:
     '''Lấy tên card đồ hoạ thực tế từ hệ thống tương ứng với encoder đã phát hiện.'''
-    pass
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): ~890 instruction dò nvidia-smi / WMI / amdconf, mất
+    # hoàn toàn trong bản decompile.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.get_gpu_device_name')
 
 
-def detect_gpu_encoder(preferred = None, codec = None):
+def detect_gpu_encoder(preferred: str = 'auto', codec: str = 'h264') -> 'tuple[str, list[str], bool]':
     """Phát hiện GPU encoder khả dụng (NVENC / AMF / QSV) và CPU theo chuẩn Codec yêu cầu.
 
     Args:
         preferred: 'auto' (ưu tiên card rời tốt nhất), 'nvenc', 'qsv', 'amf', hoặc 'cpu'.
         codec: 'h264', 'hevc' (H.265), hoặc 'av1'.
     """
-    if not preferred:
-        preferred
-    pref = 'auto'.lower().strip()
-    if not codec:
-        codec
-    c = 'h264'.lower().strip()
-    if 'hevc' in c or '265' in c:
-        target_codec = 'hevc'
-    elif 'av1' in c:
-        target_codec = 'av1'
-    else:
-        target_codec = 'h264'
-    cache_key = f'''{pref}:{target_codec}'''
-    if cache_key in _CACHED_GPU_ENCODER:
-        return _CACHED_GPU_ENCODER[cache_key]
-    if None == 'hevc':
-        cpu_res = ('libx265', [
-            '-preset',
-            'fast',
-            '-crf',
-            '20',
-            '-tag:v',
-            'hvc1'], False)
-    elif target_codec == 'av1':
-        cpu_res = ('libsvtav1', [
-            '-preset',
-            '6',
-            '-crf',
-            '24'], False)
-    else:
-        cpu_res = ('libx264', [
-            '-preset',
-            'fast',
-            '-crf',
-            '18'], False)
-    if pref in ('cpu', 'libx264', 'none', 'false'):
-        _CACHED_GPU_ENCODER[cache_key] = cpu_res
-        return cpu_res
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): phần quét encoder thật (~450 instruction sau khi dựng
+    # cpu_res) mất trong bản decompile -> không đoán thứ tự ưu tiên NVENC/QSV/AMF.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.detect_gpu_encoder')
 
 
-def list_available_gpu_devices(force_rescan = None):
+def list_available_gpu_devices(force_rescan: bool = False) -> 'list[dict]':
     '''Trả về danh sách tất cả các bộ mã hóa / card đồ hoạ khả dụng trên máy.'''
-    global _CACHED_AVAILABLE_GPUS
-    if force_rescan:
-        _CACHED_AVAILABLE_GPUS = None
-        _CACHED_GPU_ENCODER.clear()
-# WARNING: Decompyle incomplete
+    # TODO(khôi phục hành vi): ~450 instruction, bản decompile dừng sau bước clear cache.
+    raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.list_available_gpu_devices')
 
 
-def get_gpu_hardware_badge(preferred = None, force_rescan = None):
+def get_gpu_hardware_badge(preferred: str = 'auto', force_rescan: bool = False) -> dict:
     '''Trả về thông tin chi tiết về phần cứng GPU và encoder hỗ trợ (có memoization).'''
-    if not preferred:
-        preferred
-    pref = 'auto'.lower().strip()
-    if force_rescan and pref in _CACHED_HARDWARE_BADGE:
+    pref = (preferred or 'auto').lower().strip()
+    if not force_rescan and pref in _CACHED_HARDWARE_BADGE:
         return dict(_CACHED_HARDWARE_BADGE[pref])
-    (enc, args, is_gpu) = None(preferred = pref)
+    (enc, args, is_gpu) = detect_gpu_encoder(preferred = pref)
     dev_name = get_gpu_device_name(enc) if is_gpu else 'Không có card đồ họa rời'
     if is_gpu:
         if 'nvenc' in enc:
@@ -586,15 +457,13 @@ def get_gpu_hardware_badge(preferred = None, force_rescan = None):
     else:
         badge_text = 'Chỉ dùng CPU (libx264)'
         status = 'Không phát hiện card đồ họa hỗ trợ. FFmpeg sẽ dùng CPU để render ổn định.'
-    if not pref:
-        pref
     res = {
         'is_gpu': is_gpu,
         'encoder': enc,
         'device_name': dev_name,
         'badge_text': badge_text,
         'status': status,
-        'selected_backend': 'auto' }
+        'selected_backend': pref or 'auto' }
     _CACHED_HARDWARE_BADGE[pref] = res
     return dict(res)
 
@@ -602,28 +471,43 @@ def get_gpu_hardware_badge(preferred = None, force_rescan = None):
 class FFmpegRenderer:
     '''Bake video/audio/layer vào MP4 và kiểm tra output sau render.'''
     
-    def __init__(self = None, work_dir = None, *, cancel_event):
+    def __init__(self, work_dir: 'str | Path', *, cancel_event: 'threading.Event | None' = None) -> None:
         self.work_dir = Path(work_dir)
         self.work_dir.mkdir(parents = True, exist_ok = True)
-    # WARNING: Decompyle incomplete
+        self._cancel = cancel_event if cancel_event is not None else threading.Event()
+        self._proc = None
 
     
-    def request_cancel(self = None):
+    def request_cancel(self) -> None:
         '''Huỷ bake đang chạy (kill FFmpeg).'''
         self._cancel.set()
         self._kill_current()
 
     
-    def is_cancelled(self = None):
+    def is_cancelled(self) -> bool:
         return self._cancel.is_set()
 
     
-    def _kill_current(self = None):
+    def _kill_current(self) -> None:
         proc = self._proc
-    # WARNING: Decompyle incomplete
+        if proc is None:
+            return None
+        if proc.poll() is not None:
+            return None
+        
+        try:
+            _kill_process_tree(int(proc.pid))
+        except Exception:
+            
+            try:
+                proc.kill()
+            except Exception:
+                return None
+
+        return None
 
     
-    def _run_cancellable(self = None, cmd = None, *, timeout, on_progress, duration_s, dedupe_progress):
+    def _run_cancellable(self, cmd: 'list[str]', *, timeout: float = 3600, on_progress: 'Callable[[float, str], None] | None' = None, duration_s: 'float | None' = None, dedupe_progress: bool = False) -> 'subprocess.CompletedProcess[str]':
         '''
         Chạy FFmpeg có thể dừng + report % thật.
 
@@ -631,8 +515,38 @@ class FFmpegRenderer:
         - Phải ĐỌC stdout/stderr liên tục (không để pipe đầy → FFmpeg treo im).
         - `-progress pipe:1` đưa out_time_ms ra stdout để UI nhích %.
         '''
-        pass
-    # WARNING: Decompyle incomplete
+        # TODO(khôi phục hành vi): ~1500 instruction (luồng đọc pipe, parse
+        # out_time_ms, huỷ tiến trình) — bản decompile chỉ còn `pass`.
+        raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.FFmpegRenderer._run_cancellable')
 
     
-    def _encoder(self = None, use_gpu = None, preferred_backend = None, codec = ('auto', 'h264')):
+    def _encoder(self, use_gpu: bool, preferred_backend: str = 'auto', codec: str = 'h264') -> 'tuple[str, list[str], bool]':
+        if use_gpu:
+            (enc, args, is_gpu) = detect_gpu_encoder(preferred = preferred_backend, codec = codec)
+            if is_gpu:
+                return (enc, args, True)
+        return detect_gpu_encoder(preferred = 'cpu', codec = codec)
+
+    
+    def _validate(self, output: Path, expected_layers: 'dict[str, bool]', *, dependencies: 'dict[str, Any] | None' = None) -> 'MP4RenderResult':
+        # TODO(khôi phục hành vi): ~540 instruction kiểm tra output sau render; bản
+        # decompile bị cắt ngay ở `def _encoder` nên không sinh ra hàm này.
+        raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.FFmpegRenderer._validate')
+
+    
+    def render(self, video_path: 'str | Path', output_path: 'str | Path', *, srt_path: 'str | Path | None' = None, voice_path: 'str | Path | None' = None, options: 'dict[str, Any] | None' = None, progress: 'ProgressCb | None' = None) -> 'MP4RenderResult':
+        # TODO(khôi phục hành vi): hàm chính của module (~11500 instruction) mất hoàn
+        # toàn trong bản decompile. Đây là việc của lượt khôi phục hành vi.
+        raise NotImplementedError('chưa khôi phục từ bytecode: ffmpeg_renderer.FFmpegRenderer.render')
+
+    
+    @staticmethod
+    def _cleanup_partial(output: Path) -> None:
+        
+        try:
+            if output.is_file():
+                output.unlink()
+                return None
+            return None
+        except OSError:
+            return None
