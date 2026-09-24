@@ -9,7 +9,6 @@
   khoanh vùng cần OCR (chỉ đọc chữ trong vùng đã chọn).
 - **Thêm 24 giọng tiếng Việt** cho CapCut TTS — dropdown giờ liệt kê đầy đủ
   127 giọng / 10 ngôn ngữ.
-- Bộ test đối chiếu và các cổng kiểm mã nguồn (`tools/`).
 
 **Sửa**
 - Danh sách ngôn ngữ OCR khớp đúng VideOCR; dropdown hiển thị tên đầy đủ

@@ -25,23 +25,29 @@ Hy vọng project có thể hữu ích cho anh em.
    - Dịch phụ đề tự động bằng AI (Gemini / Google Translate).
    - Chỉnh sửa, xuất/nhập file SRT dễ dàng.
 
-2. **Text-To-Speech (Lồng tiếng AI - TTS)**:
+2. **OCR phụ đề cứng (Extract Burned-in Subtitles)**:
+   - Đọc chữ hardsub trên video (phụ đề Trung Quốc, text cài sẵn trong khung hình) rồi xuất ra SRT.
+   - Xem trước từng khung hình, kéo thanh trượt đến câu cần lấy, kéo chuột chọn vùng OCR.
+   - Chọn ngôn ngữ theo tên đầy đủ (Chinese & English, Vietnamese, English, …).
+   - Có sẵn ở panel bên phải, làm độc lập (`tools/video_ocr.py`) hoặc chạy bằng lệnh.
+
+3. **Text-To-Speech (Lồng tiếng AI - TTS)**:
    - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS, ElevenLabs, ZeroTTS, VietneuTTS(clone voice).
-   - Kho giọng CapCut cloud mở khoá: **24 giọng tiếng Việt** (và 103 giọng ngôn ngữ khác) nạp thẳng vào dropdown, xem mục [Danh sách giọng CapCut](#-danh-sách-giọng-capcut-voice-catalog).
+   - Kho giọng CapCut cloud: **127 giọng / 10 ngôn ngữ**, trong đó **24 giọng tiếng Việt**, nạp thẳng vào dropdown.
    - Cho phép tinh chỉnh tốc độ, âm lượng, ghép nối audio khớp với timeline video.
 
-3. **Chỉnh sửa Video & Render (Video Editor)**:
+4. **Chỉnh sửa Video & Render (Video Editor)**:
    - Che mờ (Blur) thông minh, làm mờ vùng chỉ định.
    - Cắt ghép (Trim) video đa phân đoạn.
    - Chèn Logo, Watermark tùy chỉnh có hiệu ứng chuyển động.
    - Tối ưu hóa render bằng FFmpeg (GPU Acceleration) cho tốc độ xuất cực nhanh.
 
-4. **Story AI Creator (Tạo video tự động)**:
+5. **Story AI Creator (Tạo video tự động)**:
    - Dựng video hoàn toàn tự động dựa trên prompt và tài nguyên có sẵn.
    - Tự động tách nền (Vocal / BGM Separation) sử dụng thuật toán Demucs (AI).
    - Tự chọn nhạc nền (BGM), trộn âm lượng (Audio ducking) thông minh.
 
-5. **Chống quét bản quyền (Bypass / Reup MMO)**:
+6. **Chống quét bản quyền (Bypass / Reup MMO)**:
    - Các thuật toán xử lý video chuyên sâu: xáo trộn Subpixel, thêm nhiễu (Noise), đổi Colorspace.
    - Can thiệp tốc độ (Tempo), khung hình (GOP), thay đổi Zoom/Pan động (Dynamic motion) để né thuật toán dò trùng lặp.
    - Chế độ **Ultimate Bypass** giúp lách bản quyền nền tảng (TikTok, YouTube), tạo ra video 100% unique cho dân Reup.
