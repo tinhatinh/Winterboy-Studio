@@ -1,7 +1,26 @@
 # Source Generated with Decompyle++
 # File: capcut_tts_engine.pyc (Python 3.12)
 
-__doc__ = 'CapCut cloud TTS + STT engine for Winterboy Studio.\n\nWraps ``capcut_common_task_client`` (from capcut-tts-api):\n\nTTS:\n  1. POST /lv/v1/common_task/new   (sami_text_to_speech)\n  2. POST /lv/v1/common_task/query until succeed/failed\n  3. Extract audio URL or base64 → local MP3/WAV\n\nSTT (alongside Whisper / ElevenLabs — does not replace them):\n  1. Extract audio → upload VOD (upload_sign + Apply/CommitUploadInner)\n  2. POST common_task/new (cc_audio_subtitle_asr)\n  3. Poll query → utterances → SRT\n\nVoice catalog ships as ``capcut_voices.json`` (from CapCut Voice.json).\n\nDevice/session overrides live in ``~/.winterboy/capcut_device.json`` so secrets\nstay out of last_config / shared presets.  Without a valid device profile\nCapCut may return ``shark block only`` (anti-bot).\n'
+"""CapCut cloud TTS + STT engine for Winterboy Studio.
+
+Wraps ``capcut_common_task_client`` (from capcut-tts-api):
+
+TTS:
+  1. POST /lv/v1/common_task/new   (sami_text_to_speech)
+  2. POST /lv/v1/common_task/query until succeed/failed
+  3. Extract audio URL or base64 → local MP3/WAV
+
+STT (alongside Whisper / ElevenLabs — does not replace them):
+  1. Extract audio → upload VOD (upload_sign + Apply/CommitUploadInner)
+  2. POST common_task/new (cc_audio_subtitle_asr)
+  3. Poll query → utterances → SRT
+
+Voice catalog ships as ``capcut_voices.json`` (from CapCut Voice.json).
+
+Device/session overrides live in ``~/.winterboy/capcut_device.json`` so secrets
+stay out of last_config / shared presets.  Without a valid device profile
+CapCut may return ``shark block only`` (anti-bot).
+"""
 from __future__ import annotations
 import base64
 import json
@@ -114,25 +133,18 @@ def load_device_source_preferences():
     path = _DEVICE_SOURCE_PATH
     if not path.is_file():
         return defaults
-    
+
     try:
         data = json.loads(path.read_text(encoding = 'utf-8'))
         if not isinstance(data, dict):
             return defaults
-        if not data.get('backup_path'):
-            data.get('backup_path')
-        raw_backup = None('').strip()
+        raw_backup = str(data.get('backup_path') or '').strip()
         return {
             'use_backup': bool(data.get('use_backup', False)),
             'backup_path': raw_backup }
-    except Exception:
-        exc = None
+    except Exception as exc:
         logger.warning('Không đọc được lựa chọn Device CapCut: %s', exc)
-        del exc
-        return None
-        None = 
-        del exc
-
+        return defaults
 
 
 def save_device_source_preferences(*, use_backup, backup_path):
@@ -150,20 +162,15 @@ def load_device_overrides():
     path = _DEVICE_PATH
     if not path.is_file():
         return { }
-    
+
     try:
         data = json.loads(path.read_text(encoding = 'utf-8'))
         if isinstance(data, dict):
             return data
-        return None
-    except Exception:
-        exc = None
+        return { }
+    except Exception as exc:
         logger.warning('Không đọc được capcut_device.json: %s', exc)
-        del exc
-        return None
-        None = 
-        del exc
-
+        return { }
 
 
 def load_selected_device_overrides():
@@ -219,61 +226,63 @@ def get_device():
 
 
 def _load_voice_catalog():
+    '''Đọc ``capcut_voices.json`` — snapshot danh sách giọng CapCut cloud.
+
+    Mỗi phần tử: ``display_name, voice_type, resource_id, lang, lan, captured_at``.
+    Khoá lạ bị bỏ qua nên có thể thêm ``verified`` / ``note`` để tra cứu.
+    Thiếu file thì trả về [] để UI còn rơi xuống giọng mặc định.
+    '''
     if not _VOICES_PATH.is_file():
         return []
-    
+
     try:
-        data = json.loads(_VOICES_PATH.read_text(encoding = 'utf-8'))
-        if isinstance(data, list):
-            return data
-        return None
-    except Exception:
-        exc = None
+        data = json.loads(_VOICES_PATH.read_text(encoding = 'utf-8-sig'))
+    except Exception as exc:
         logger.warning('Không đọc được capcut_voices.json: %s', exc)
-        del exc
-        return None
-        None = 
-        del exc
+        return []
+    if isinstance(data, dict):
+        data = data.get('voices') or data.get('data') or []
+    return data if isinstance(data, list) else []
 
 
+def voice_lang(item):
+    '''Mã ngôn ngữ của một phần tử catalog (``lang`` đầy đủ hoặc ``lan`` viết tắt).'''
+    return str(item.get('lang') or item.get('lan') or '').strip()
 
-def list_capcut_voices(*, lang):
+
+def _lang_matches(have, want):
+    '''Lọc lỏng: ``vi`` khớp với ``vi-VN`` và ngược lại.'''
+    if not want:
+        return True
+    have = str(have or '').casefold()
+    want = str(want).casefold()
+    if not have:
+        return False
+    return want in have or have in want or have.startswith(want.split('-')[0])
+
+
+def list_capcut_voices(*, lang = 'vi-VN'):
     '''Return ``(label, voice_key)`` for UI OptionMenu.
 
     Label: ``Display Name | voice_type:resource_id``
     voice_key: ``voice_type:resource_id``
     '''
-    catalog = _load_voice_catalog()
     result = []
     seen = set()
-    for item in catalog:
+    for item in _load_voice_catalog():
         if not isinstance(item, dict):
             continue
-        if not item.get('voice_type'):
-            item.get('voice_type')
-        voice_type = str('').strip()
-        if not item.get('resource_id'):
-            item.get('resource_id')
-        resource_id = str('').strip()
-        if not voice_type or resource_id:
+        voice_type = str(item.get('voice_type') or '').strip()
+        resource_id = str(item.get('resource_id') or '').strip()
+        if not voice_type or not resource_id:
             continue
-        if not item.get('lang'):
-            item.get('lang')
-            if not item.get('lan'):
-                item.get('lan')
-        item_lang = str('').strip()
-        if lang:
-            want = lang.casefold()
-            have = item_lang.casefold()
-            if not want not in have and have not in want and have.startswith(want.split('-')[0]):
-                continue
+        if not _lang_matches(voice_lang(item), lang):
+            continue
         key = f'''{voice_type}:{resource_id}'''
         if key in seen:
             continue
         seen.add(key)
-        if not item.get('display_name'):
-            item.get('display_name')
-        name = str(voice_type).strip()
+        name = str(item.get('display_name') or voice_type).strip()
         result.append((f'''{name} | {key}''', key))
     if not result:
         result.append((DEFAULT_VOICE_LABEL, f'''{DEFAULT_VOICE_TYPE}:{DEFAULT_RESOURCE_ID}'''))
@@ -286,3 +295,19 @@ def list_capcut_voices_all():
 
 
 def parse_voice_key(voice = None):
+    '''Tách ``(voice_type, resource_id)`` từ khoá giọng.
+
+    Nhận cả ba dạng: ``BV074_streaming``, ``voice_type:resource_id`` và nhãn UI
+    đầy đủ ``Tên hiển thị | voice_type:resource_id``. Thiếu resource_id thì dùng
+    ``DEFAULT_RESOURCE_ID``.
+    '''
+    raw = str(voice or '').strip()
+    if '|' in raw:
+        raw = raw.rsplit('|', 1)[-1].strip()
+    if ':' in raw:
+        voice_type, _, resource_id = raw.partition(':')
+        voice_type = voice_type.strip()
+        resource_id = resource_id.strip()
+        if voice_type and resource_id:
+            return (voice_type, resource_id)
+    return (raw or DEFAULT_VOICE_TYPE, DEFAULT_RESOURCE_ID)

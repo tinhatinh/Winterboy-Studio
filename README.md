@@ -25,6 +25,7 @@ Hy vọng project có thể hữu ích cho anh em.
 
 2. **Text-To-Speech (Lồng tiếng AI - TTS)**:
    - Tích hợp rất nhiều Engine lồng tiếng: CapCut TTS, Edge TTS, ElevenLabs, ZeroTTS, VietneuTTS(clone voice).
+   - Kho giọng CapCut cloud mở khoá: **24 giọng tiếng Việt** (và 103 giọng ngôn ngữ khác) nạp thẳng vào dropdown, xem mục [Danh sách giọng CapCut](#-danh-sách-giọng-capcut-voice-catalog).
    - Cho phép tinh chỉnh tốc độ, âm lượng, ghép nối audio khớp với timeline video.
 
 3. **Chỉnh sửa Video & Render (Video Editor)**:
@@ -77,6 +78,55 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
    ```bash
    python main.py
    ```
+
+---
+
+## 🗣️ Danh sách giọng CapCut (Voice catalog)
+
+Engine CapCut TTS đọc kho giọng từ **`app/services/capcut_voices.json`**. Có file là dropdown
+trong ứng dụng hiện đầy đủ giọng, không cần sửa code; thiếu file thì chỉ còn 1 giọng mặc định.
+
+Bản đang có trong repo: **127 giọng / 10 ngôn ngữ** (en-US 40, **vi-VN 24**, ja-JP 19, zh-CN 15,
+es-ES 9, th-TH 6, id-ID 4, pt-BR 4, de-DE 3, fr-FR 3), xếp tiếng Việt lên đầu.
+
+24 giọng tiếng Việt — `voice_type:resource_id` nằm trong file JSON:
+
+> Alex Đại Đế · Ban Mai · Bản Tin 1 · Bản Tin nữ · Cô Gái Hoạt Ngôn · Giọng Bé · Giọng Gái Mới Lớn ·
+> Giọng Nam Trầm · Giọng Nữ Phổ Thông · Kenny Đại Đế · Mai · Nam bản tin · Nhỏ Ngọt Ngào ·
+> Quên Tên Tự Test · Review Phim 2 · Review Phim 3 · Review Phim 4 · Review Phim new · Robot VN ·
+> Sunny Idol · Thanh Niên Tự Tin · Việt Méo · Hoai My · Nam Minh
+
+Dòng định dạng mỗi phần tử (thừa khoá thì engine bỏ qua):
+
+```json
+{
+  "display_name": "Nhỏ Ngọt Ngào",
+  "voice_type": "BV421_vivn_streaming",
+  "resource_id": "7252594014782755330",
+  "lang": "vi-VN",
+  "lan": "vi",
+  "captured_at": "2026-04-16T16:54:58.535653",
+  "verified": true
+}
+```
+
+### Kiểm chứng giọng nào thực sự sinh được audio
+
+Catalog chỉ là danh sách do CapCut trả về; có giọng bị gắn quyền riêng nên gọi vẫn nhận `failed`
+(Hoai My và Nam Minh trong danh sách trên là hai giọng như vậy, đã đánh dấu `"verified": false`).
+Chạy tool để dò lại và ghi kết quả vào file:
+
+```bash
+python tools/verify_capcut_voices.py --lang vi --write
+# bản đã cài đặt (bỏ qua mã nguồn chưa hoàn chỉnh):
+python tools/verify_capcut_voices.py --lang vi --write --engine "C:/WinterboyStudio/_internal"
+```
+
+### Lưu ý khi build
+
+`build.bat` đã truyền `--add-data "app/services/capcut_voices.json;app/services"` để file nằm đúng
+chỗ `_internal/app/services/` trong bản đóng gói. Ngoài ra cần device profile thật ở
+`~/.winterboy/capcut_device.json`, nếu không CapCut sẽ trả `shark block only` (chống bot).
 
 ---
 

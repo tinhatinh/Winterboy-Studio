@@ -1,0 +1,1044 @@
+[
+  {
+    "display_name": "Alex Đại Đế",
+    "voice_type": "BV560_streaming",
+    "resource_id": "7483736167565758992",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T20:26:32.733998",
+    "verified": true
+  },
+  {
+    "display_name": "Ban Mai",
+    "voice_type": "multi_female_yangguangnv_uranus_bigtts",
+    "resource_id": "7637456432522218773",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Bản Tin 1",
+    "voice_type": "multi_female_quanweinv_uranus_bigtts",
+    "resource_id": "7637458743197732117",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Bản Tin nữ",
+    "voice_type": "multi_female_sisi_uranus_bigtts",
+    "resource_id": "7637455857285860629",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Cô Gái Hoạt Ngôn",
+    "voice_type": "BV074_streaming",
+    "resource_id": "7102355709945188865",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T16:59:13.750474",
+    "verified": true
+  },
+  {
+    "display_name": "Giọng Bé",
+    "voice_type": "BV074_streaming_dsp",
+    "resource_id": "7550087831092251920",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T16:59:13.750474",
+    "verified": true
+  },
+  {
+    "display_name": "Giọng Gái Mới Lớn",
+    "voice_type": "multi_female_peiqi_uranus_bigtts",
+    "resource_id": "7637458789033151751",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Giọng Nam Trầm ",
+    "voice_type": "multi_male_felipe_uranus_bigtts",
+    "resource_id": "7637456729696996628",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Giọng Nữ Phổ Thông",
+    "voice_type": "vi_female_huong",
+    "resource_id": "7264854897953083905",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T16:58:05.941432",
+    "verified": true
+  },
+  {
+    "display_name": "Kenny Đại Đế",
+    "voice_type": "BV075_streaming_demon_dsp",
+    "resource_id": "7569442422665661712",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:07:53.599467",
+    "verified": true
+  },
+  {
+    "display_name": "Mai",
+    "voice_type": "BV562_streaming",
+    "resource_id": "7483736254694035984",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Nam bản tin",
+    "voice_type": "multi_female_xinwenjieshuo_uranus_bigtts",
+    "resource_id": "7637455039719640327",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Nhỏ Ngọt Ngào",
+    "voice_type": "BV421_vivn_streaming",
+    "resource_id": "7252594014782755330",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T16:54:58.535653",
+    "verified": true
+  },
+  {
+    "display_name": "Quên Tên Tự Test",
+    "voice_type": "multi_female_tianmeijieshuo_uranus_bigtts",
+    "resource_id": "7637460417295469832",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Review Phim 2",
+    "voice_type": "multi_female_xyf04auto_uranus_bigtts",
+    "resource_id": "7637458743197732117",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Review Phim 3",
+    "voice_type": "multi_female_daqi_uranus_bigtts",
+    "resource_id": "7637451983389019409",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Review Phim 4",
+    "voice_type": "multi_female_stokie_uranus_bigtts",
+    "resource_id": "7637456729696996628",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Review Phim new",
+    "voice_type": "multi_female_richgirl_uranus_bigtts",
+    "resource_id": "7637460351541447956",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Robot VN",
+    "voice_type": "BV075_streaming_robot_dsp",
+    "resource_id": "7538698409633516816",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Sunny Idol",
+    "voice_type": "multi_female_kiwi_uranus_bigtts",
+    "resource_id": "7637457995882089749",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:03:08.196640",
+    "verified": true
+  },
+  {
+    "display_name": "Thanh Niên Tự Tin",
+    "voice_type": "BV075_streaming",
+    "resource_id": "7102355803792740865",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T19:18:27.829029",
+    "verified": true
+  },
+  {
+    "display_name": "Việt Méo",
+    "voice_type": "BV075_streaming_vibrato_dsp",
+    "resource_id": "7569450639810465040",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:01:05.535801",
+    "verified": true
+  },
+  {
+    "display_name": "Hoai My",
+    "voice_type": "vi-VN-HoaiMyNeural",
+    "resource_id": "7371666434650280464",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:00:10.719561",
+    "verified": false,
+    "note": "RuntimeError"
+  },
+  {
+    "display_name": "Nam Minh",
+    "voice_type": "vi-VN-NamMinhNeural",
+    "resource_id": "7371666524727153168",
+    "lang": "vi-VN",
+    "lan": "vi",
+    "captured_at": "2026-04-16T17:00:10.719561",
+    "verified": false,
+    "note": "RuntimeError"
+  },
+  {
+    "display_name": "Koubo",
+    "voice_type": "DiT_de_male_koubo",
+    "resource_id": "7584344912276114704",
+    "lang": "de-DE",
+    "lan": "de",
+    "captured_at": "2026-04-16T17:46:01.806866"
+  },
+  {
+    "display_name": "Sanfte Führerin",
+    "voice_type": "DiT_de_female_qingsong",
+    "resource_id": "7584344912292760848",
+    "lang": "de-DE",
+    "lan": "de",
+    "captured_at": "2026-04-16T19:47:19.338313"
+  },
+  {
+    "display_name": "TieFE Dozen",
+    "voice_type": "DiT_de_female_jiangshi",
+    "resource_id": "7584344912292777232",
+    "lang": "de-DE",
+    "lan": "de",
+    "captured_at": "2026-04-16T18:54:06.059705"
+  },
+  {
+    "display_name": "American Female",
+    "voice_type": "BV029_streaming",
+    "resource_id": "6898240012404396546",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:57:11.684698"
+  },
+  {
+    "display_name": "Artist",
+    "voice_type": "en_female_nail_artist",
+    "resource_id": "7393228944540963344",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:48:51.024178"
+  },
+  {
+    "display_name": "Bluetooth",
+    "voice_type": "ICL_en_female_cc_bluetooth",
+    "resource_id": "7427072447129588225",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:58:43.473823"
+  },
+  {
+    "display_name": "BrianJW",
+    "voice_type": "ICL_en_male_317M_BrianJW",
+    "resource_id": "7501615796456526352",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:07:51.218166"
+  },
+  {
+    "display_name": "Captain",
+    "voice_type": "ICL_en_male_captain",
+    "resource_id": "7510080106199665937",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:13:15.083861"
+  },
+  {
+    "display_name": "Chrming Male",
+    "voice_type": "en_us_010",
+    "resource_id": "7114563482359435778",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:51:54.146075"
+  },
+  {
+    "display_name": "Classical Music",
+    "voice_type": "en_male_m03_classical",
+    "resource_id": "7245192458206712322",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:32:07.063338"
+  },
+  {
+    "display_name": "Creepy female",
+    "voice_type": "ICL_en_female_ditie_dsp",
+    "resource_id": "7572089965652315393",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:14:13.977433"
+  },
+  {
+    "display_name": "Cute Boy",
+    "voice_type": "BV507_streaming",
+    "resource_id": "7081168994673103362",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:55:47.456838"
+  },
+  {
+    "display_name": "Cute Girl",
+    "voice_type": "ICL_en_female_little_cute_dsp",
+    "resource_id": "7605129105306111233",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:57:04.904497"
+  },
+  {
+    "display_name": "Daiana",
+    "voice_type": "multi_female_wenjingmaomao_moon_bigtts_cc",
+    "resource_id": "7501234865447113233",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:15:00.999210"
+  },
+  {
+    "display_name": "Deadpool",
+    "voice_type": "en_male_deadpool",
+    "resource_id": "7231025912261644802",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:04:05.940535"
+  },
+  {
+    "display_name": "Desti",
+    "voice_type": "BV540_streaming",
+    "resource_id": "7477925128651674113",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:39:00.038670"
+  },
+  {
+    "display_name": "Dolly famle",
+    "voice_type": "en_us_002_dsp",
+    "resource_id": "7519722328935140624",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:53:43.896703"
+  },
+  {
+    "display_name": "Dramaaa",
+    "voice_type": "en_male_dramaqueen_zachk",
+    "resource_id": "733719524381032",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:34:18.103409"
+  },
+  {
+    "display_name": "Emotional",
+    "voice_type": "en_female_emotional_moon_bigtts",
+    "resource_id": "7114563483257016833",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:22:43.690635"
+  },
+  {
+    "display_name": "EN US",
+    "voice_type": "en_us_002",
+    "resource_id": "7130515992936976897",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:17:42.175768"
+  },
+  {
+    "display_name": "EN US 2",
+    "voice_type": "en_us_006",
+    "resource_id": "7114563482518819329",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:15:57.990247"
+  },
+  {
+    "display_name": "Energetic Famale",
+    "voice_type": "BV503_streaming",
+    "resource_id": "7081168775646548482",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:43:36.318127"
+  },
+  {
+    "display_name": "English",
+    "voice_type": "BV510_streaming",
+    "resource_id": "7081169180120060418",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:32:31.135157"
+  },
+  {
+    "display_name": "Excited",
+    "voice_type": "en_female_caroline_clone2",
+    "resource_id": "7232136837861478913",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:51:05.634646"
+  },
+  {
+    "display_name": "Female Teacher",
+    "voice_type": "en_female_soothing_mars_bigtts",
+    "resource_id": "7526754143369760016",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:15:13.877104"
+  },
+  {
+    "display_name": "Grim Rock",
+    "voice_type": "en_male_death_rock",
+    "resource_id": "7372472588859085313",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:04:59.706691"
+  },
+  {
+    "display_name": "Janeamber",
+    "voice_type": "en_female_janeamber_mars_bigtts",
+    "resource_id": "7538652405005700369",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:22:43.690635"
+  },
+  {
+    "display_name": "Jenny",
+    "voice_type": "en-US-JennyMultilingualNeural",
+    "resource_id": "7569439521352338689",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:05:52.828530"
+  },
+  {
+    "display_name": "Jessie",
+    "voice_type": "DiT_en_female_jessie",
+    "resource_id": "7564325260414160129",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:33:50.661222"
+  },
+  {
+    "display_name": "Kai",
+    "voice_type": "ICL_en_male_310M_CoreyK",
+    "resource_id": "7501615396093432337",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:11:03.648451"
+  },
+  {
+    "display_name": "Lisa",
+    "voice_type": "ICL_en_female_lisa",
+    "resource_id": "7491194157852004881",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:01:16.419852"
+  },
+  {
+    "display_name": "Male Eng",
+    "voice_type": "en",
+    "resource_id": "7337657863390630401",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:18:54.241692"
+  },
+  {
+    "display_name": "Male Profess",
+    "voice_type": "en_us_007",
+    "resource_id": "7114563482472681986",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:13:08.687098"
+  },
+  {
+    "display_name": "Mentor",
+    "voice_type": "en_male_artistic_layne",
+    "resource_id": "7337195454980952577",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:00:42.297804"
+  },
+  {
+    "display_name": "Mischief",
+    "voice_type": "ICL_en_male_kevin2",
+    "resource_id": "7438551246824280592",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:52:28.876917"
+  },
+  {
+    "display_name": "Narrator",
+    "voice_type": "ICL_en_male_philosopher_dsp",
+    "resource_id": "7525722920161725712",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:09:15.586981"
+  },
+  {
+    "display_name": "Oogie",
+    "voice_type": "ICL_en_male_oogie2",
+    "resource_id": "7438551608746578449",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T20:23:06.330292"
+  },
+  {
+    "display_name": "Robaa",
+    "voice_type": "en_female_loba_apex",
+    "resource_id": "7360986396594541057",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:44:48.062758"
+  },
+  {
+    "display_name": "Sherry",
+    "voice_type": "en_female_sherry",
+    "resource_id": "7278146554844680706",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T17:39:22.565639"
+  },
+  {
+    "display_name": "Suaraaa",
+    "voice_type": "BV072_streaming",
+    "resource_id": "7028847457089884674",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:16:04.763487"
+  },
+  {
+    "display_name": "Tinn",
+    "voice_type": "ICL_en_male_305M_JamieTr",
+    "resource_id": "7501615071068426768",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:51:50.109232"
+  },
+  {
+    "display_name": "Trickster",
+    "voice_type": "en_male_trickster_stream",
+    "resource_id": "7189462618589893121",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T18:58:47.747115"
+  },
+  {
+    "display_name": "Trickster",
+    "voice_type": "DiT_en_male_trickster",
+    "resource_id": "7564317234814848273",
+    "lang": "en-US",
+    "lan": "en",
+    "captured_at": "2026-04-16T19:49:11.232200"
+  },
+  {
+    "display_name": "Agenting",
+    "voice_type": "DiT_es_male_agenting",
+    "resource_id": "7597890302053010704",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T17:46:01.806866"
+  },
+  {
+    "display_name": "Diablomalo",
+    "voice_type": "ICL_es_male_emo",
+    "resource_id": "7568807675337723137",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T19:08:00.490219"
+  },
+  {
+    "display_name": "EdgarRu",
+    "voice_type": "ICL_es_male_tt_EdgarRu",
+    "resource_id": "7501616889173381633",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T20:20:31.688602"
+  },
+  {
+    "display_name": "Female Bilunv",
+    "voice_type": "DiT_es_female_bilunv",
+    "resource_id": "7598080655146192144",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T18:48:51.024178"
+  },
+  {
+    "display_name": "Lavana",
+    "voice_type": "ICL_es_male_shenchen",
+    "resource_id": "7568807534438468865",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T20:21:58.224584"
+  },
+  {
+    "display_name": "Lina",
+    "voice_type": "ICL_es_female_tt_RosaW",
+    "resource_id": "75016171499039011",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T20:21:05.595179"
+  },
+  {
+    "display_name": "Lía",
+    "voice_type": "ICL_es_female_tt_Vivi",
+    "resource_id": "7501616990008644113",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T20:19:51.325029"
+  },
+  {
+    "display_name": "Male Jiqiren ",
+    "voice_type": "ICL_es_male_jiqiren",
+    "resource_id": "7568807473923099920",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T19:17:16.008945"
+  },
+  {
+    "display_name": "Señor entusiasta",
+    "voice_type": "DiT_es_male_bilunan",
+    "resource_id": "7597943534309690641",
+    "lang": "es-ES",
+    "lan": "es",
+    "captured_at": "2026-04-16T17:46:01.806866"
+  },
+  {
+    "display_name": "Douce",
+    "voice_type": "DiT_fr_female_soothing",
+    "resource_id": "7573961077009042689",
+    "lang": "fr-FR",
+    "lan": "fr",
+    "captured_at": "2026-04-16T18:57:48.700364"
+  },
+  {
+    "display_name": "sharp",
+    "voice_type": "DiT_fr_female_sharp",
+    "resource_id": "7573963007588371728",
+    "lang": "fr-FR",
+    "lan": "fr",
+    "captured_at": "2026-04-16T20:09:23.606987"
+  },
+  {
+    "display_name": "Wit",
+    "voice_type": "DiT_fr_male_wit",
+    "resource_id": "7573964692587023617",
+    "lang": "fr-FR",
+    "lan": "fr",
+    "captured_at": "2026-04-16T17:37:56.473383"
+  },
+  {
+    "display_name": "Deep God",
+    "voice_type": "ICL_id_male_deep_god_dsp",
+    "resource_id": "7605123605034208513",
+    "lang": "id-ID",
+    "lan": "id",
+    "captured_at": "2026-04-16T19:42:48.257147"
+  },
+  {
+    "display_name": "Hantuperempuan",
+    "voice_type": "ICL_id_female_hantuperempuan",
+    "resource_id": "7469006620379320848",
+    "lang": "id-ID",
+    "lan": "id",
+    "captured_at": "2026-04-16T18:44:53.449707"
+  },
+  {
+    "display_name": "Icathian",
+    "voice_type": "id_female_icha_uranus_bigtts",
+    "resource_id": "7587328219989249296",
+    "lang": "id-ID",
+    "lan": "id",
+    "captured_at": "2026-04-16T17:16:15.390713"
+  },
+  {
+    "display_name": "Uranus",
+    "voice_type": "id_male_putra_uranus_bigtts",
+    "resource_id": "7587328479071309073",
+    "lang": "id-ID",
+    "lan": "id",
+    "captured_at": "2026-04-16T20:24:40.652003"
+  },
+  {
+    "display_name": "cute",
+    "voice_type": "ICL_ja_male_cute",
+    "resource_id": "7573955139086667009",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T20:18:37.864435"
+  },
+  {
+    "display_name": "Dashu",
+    "voice_type": "ICL_jp_male_dashu",
+    "resource_id": "7527814111502077201",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:32:12.344997"
+  },
+  {
+    "display_name": "gaoxiao",
+    "voice_type": "ICL_ja_male_gaoxiao",
+    "resource_id": "7522976550736661761",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T20:18:03.840903"
+  },
+  {
+    "display_name": "Hatunemiku",
+    "voice_type": "ICL_jp_female_hatunemiku",
+    "resource_id": "749455601346334",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T17:58:16.108073"
+  },
+  {
+    "display_name": "Lovely Idol",
+    "voice_type": "ICL_ja_female_zhiyu",
+    "resource_id": "7579078759446285584",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T17:30:06.622497"
+  },
+  {
+    "display_name": "narrator",
+    "voice_type": "ICL_ja_female_narrator",
+    "resource_id": "7573956962279361809",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T20:14:15.853320"
+  },
+  {
+    "display_name": "Rap",
+    "voice_type": "ICL_ja_male_rap",
+    "resource_id": "7573959040657591553",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T17:38:40.966389"
+  },
+  {
+    "display_name": "Tanhua",
+    "voice_type": "ICL_jp_female_tanhua",
+    "resource_id": "7522976550736760065",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T18:01:40.541766"
+  },
+  {
+    "display_name": "Xinggan",
+    "voice_type": "ICL_ja_male_xinggan",
+    "resource_id": "7522965008020540688",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T17:31:31.391270"
+  },
+  {
+    "display_name": "Yangguang",
+    "voice_type": "ICL_jp_male_yangguang",
+    "resource_id": "752572180004351515",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:04:05.166761"
+  },
+  {
+    "display_name": "Ơaoxiao",
+    "voice_type": "ICL_ja_male_paoxiao",
+    "resource_id": "7584702432115019009",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T17:59:13.918584"
+  },
+  {
+    "display_name": "クールな青年",
+    "voice_type": "ICL_jp_male_wutiaowu",
+    "resource_id": "7527837025815334161",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T17:39:22.565639"
+  },
+  {
+    "display_name": "マネージャー",
+    "voice_type": "ICL_ja_female_kuaizui02",
+    "resource_id": "7522976550736678145",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T19:12:12.094622"
+  },
+  {
+    "display_name": "厳しい先生",
+    "voice_type": "ICL_ja_male_reborn",
+    "resource_id": "7573954050379566337",
+    "lang": "ja-JP",
+    "lan": "ja",
+    "captured_at": "2026-04-16T19:45:53.221494"
+  },
+  {
+    "display_name": "天真爛漫な娘",
+    "voice_type": "ICL_jp_female_araisan",
+    "resource_id": "7527796800649055489",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:22:51.045337"
+  },
+  {
+    "display_name": "女性AI",
+    "voice_type": "ICL_ja_female_lengjingnv",
+    "resource_id": "7571602819283701009",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:06:59.679070"
+  },
+  {
+    "display_name": "少年ヒーロー",
+    "voice_type": "ICL_jp_male_zhenfennan",
+    "resource_id": "7538698409633516816",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:18:27.829029"
+  },
+  {
+    "display_name": "爽やかメンズ",
+    "voice_type": "ICL_ja_male_huolinan2",
+    "resource_id": "7510072022672624913",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T20:02:12.936927"
+  },
+  {
+    "display_name": "穏やかな声優",
+    "voice_type": "ICL_ja_male_bobao2",
+    "resource_id": "7579090923636755729",
+    "lang": "ja-JP",
+    "lan": "jp",
+    "captured_at": "2026-04-16T19:01:26.520189"
+  },
+  {
+    "display_name": "Contra",
+    "voice_type": "ICL_br_male_212M_LuizS",
+    "resource_id": "7501618011829178896",
+    "lang": "pt-BR",
+    "lan": "br",
+    "captured_at": "2026-04-16T19:48:13.839334"
+  },
+  {
+    "display_name": "Empresário Frio",
+    "voice_type": "DiT_pt_male_shangren",
+    "resource_id": "7576131970103643408",
+    "lang": "pt-BR",
+    "lan": "pt",
+    "captured_at": "2026-04-16T19:21:35.568740"
+  },
+  {
+    "display_name": "Wenrou",
+    "voice_type": "DiT_pt_male_wenrou",
+    "resource_id": "7576131428711255297",
+    "lang": "pt-BR",
+    "lan": "pt",
+    "captured_at": "2026-04-16T18:00:23.448961"
+  },
+  {
+    "display_name": "Youya",
+    "voice_type": "DiT_pt_female_youya",
+    "resource_id": "7576144104547945729",
+    "lang": "pt-BR",
+    "lan": "pt",
+    "captured_at": "2026-04-16T20:00:02.827036"
+  },
+  {
+    "display_name": "Thailand",
+    "voice_type": "BV567_streaming_demon_dsp",
+    "resource_id": "7569443462295178512",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T20:06:49.895883"
+  },
+  {
+    "display_name": "ThaiLand 2",
+    "voice_type": "BV421_thth_streaming_vibrato_dsp",
+    "resource_id": "7569439521352338689",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T18:05:52.828530"
+  },
+  {
+    "display_name": "ThaiLand 3",
+    "voice_type": "th",
+    "resource_id": "7371666742055014913",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T17:04:13.750410"
+  },
+  {
+    "display_name": "นภา",
+    "voice_type": "BV568_streaming",
+    "resource_id": "7569443462295178512",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T20:06:49.895883"
+  },
+  {
+    "display_name": "สุนิสา",
+    "voice_type": "multi_female_zendaya_uranus_bigtts",
+    "resource_id": "7569443462295178512",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T20:06:49.895883"
+  },
+  {
+    "display_name": "เด็กเสียง",
+    "voice_type": "BV567_streaming_dsp",
+    "resource_id": "7550069260152818960",
+    "lang": "th-TH",
+    "lan": "th",
+    "captured_at": "2026-04-16T19:02:45.068541"
+  },
+  {
+    "display_name": "conversation",
+    "voice_type": "multi_male_M092_conversation_wvae_bigtts_cc",
+    "resource_id": "7483453668117713425",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T18:59:30.942521"
+  },
+  {
+    "display_name": "Dramaaa",
+    "voice_type": "BV213_streaming",
+    "resource_id": "7372474337594446337",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T18:34:18.103409"
+  },
+  {
+    "display_name": "Guaiqiaogirl",
+    "voice_type": "zh_female_guaiqiaogirl",
+    "resource_id": "7473014336223449616",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T18:47:37.946328"
+  },
+  {
+    "display_name": "Naying",
+    "voice_type": "zh_female_naying",
+    "resource_id": "7436607833887478289",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T18:56:00.032327"
+  },
+  {
+    "display_name": "paoxiaoge",
+    "voice_type": "DiT_zh_male_paoxiaoge",
+    "resource_id": "7564296190074948865",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T20:16:39.299060"
+  },
+  {
+    "display_name": "Rizki",
+    "voice_type": "multi_zh_male_youyoujunzi_moon_bigtts_cc",
+    "resource_id": "7501234950042030608",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:37:53.015530"
+  },
+  {
+    "display_name": "Tangsengdsp",
+    "voice_type": "zh_male_tangsengdsp",
+    "resource_id": "7520150587619478801",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T18:52:15.343036"
+  },
+  {
+    "display_name": "Vũ hán",
+    "voice_type": "BV452_streaming",
+    "resource_id": "7543766515837848833",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T17:27:42.444689"
+  },
+  {
+    "display_name": "XiaoChao",
+    "voice_type": "DiT_zh_male_xionger",
+    "resource_id": "7564318793716059409",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:42:00.336094"
+  },
+  {
+    "display_name": "Xiaoyue",
+    "voice_type": "zh_female_xiaoyue",
+    "resource_id": "7543792542727425281",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:35:19.418716"
+  },
+  {
+    "display_name": "旅遊主播",
+    "voice_type": "zh_female_xiaonan_lv_clone2",
+    "resource_id": "7554226531451833617",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T17:19:51.620761"
+  },
+  {
+    "display_name": "暗夜蘿莉",
+    "voice_type": "zh_female_angela",
+    "resource_id": "7473014770862395905",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:36:47.691630"
+  },
+  {
+    "display_name": "溫柔姐姐",
+    "voice_type": "zh_female_inspirational",
+    "resource_id": "7473013595417088528",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:43:51.529982"
+  },
+  {
+    "display_name": "語音助理",
+    "voice_type": "zh_female_sistermango",
+    "resource_id": "7588056140685036817",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T19:53:43.896703"
+  },
+  {
+    "display_name": "電視廣告",
+    "voice_type": "BV433_streaming",
+    "resource_id": "7436608032152228353",
+    "lang": "zh-CN",
+    "lan": "zh",
+    "captured_at": "2026-04-16T17:53:32.141677"
+  }
+]
