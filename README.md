@@ -55,50 +55,32 @@ Bạn không cần phải biết code hay tự build lại phần mềm! Chỉ c
 3. Giải nén ra một thư mục bất kỳ.
 4. Chạy file `WinterboyStudio.exe` để bắt đầu làm việc!
 
-> **Về số phiên bản hiển thị trong giao diện.** `__version__` khai báo một chỗ duy
-> nhất ở `app/__init__.py` (hiện là `1.2`). Chuỗi `v1.01` bạn còn thấy trên tiêu đề
-> cửa sổ, badge trên header và hộp Cài đặt đến từ `main_window.pyc` /
-> `settings_dialog.pyc`: thân hai module đó chưa được khôi phục xong trong source
-> (`main_window.py` mới có 1/207 code object), nên chưa có chỗ để đổi chữ trong
-> source. Đây là điểm khác biệt giữa "mã nguồn" và "bản đã build" cần nói thẳng,
-> không phải chỗ bị bỏ quên — nó sẽ khớp khi build lại từ source bằng `build.bat`.
-
 ---
 
-## 🚀 Dành cho nhà phát triển (Chạy từ mã nguồn)
+## 🚀 Dành cho nhà phát triển
 
-### Yêu cầu hệ thống:
-- Hệ điều hành: Windows 10 / 11.
-- Môi trường: Python 3.10 đến 3.12 (bản đã phát hành biên dịch bằng 3.12).
-- FFmpeg (phải có trên `PATH` để render video).
+### Yêu cầu
+- Windows 10 / 11, Python 3.10 – 3.12 (bản phát hành dùng 3.12).
+- FFmpeg có trên `PATH` (bắt buộc để render video).
 
-### Các bước chạy code:
-1. **Tải mã nguồn**: Clone repository này về máy.
-   ```bash
-   git clone https://github.com/tinhatinh/Winterboy-Studio.git
-   cd Winterboy-Studio
-   ```
-2. **Cài đặt thư viện**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   `tkinter` KHÔNG cần cài vì nó đi kèm CPython. Các nhóm nặng (torch/onnxruntime
-   cho ZeroTTS, demucs cho tách lời) có chú thích riêng trong `requirements.txt`.
-3. **Kiểm tra mã nguồn trước khi sửa**:
-   ```bash
-   python tools/check_source.py --damaged --parity   # cổng kiểm tổng
-   python tools/compare_bytecode.py --all            # bao nhiêu module khớp bytecode
-   ```
-4. **Khởi chạy ứng dụng**:
-   ```bash
-   python main.py
-   ```
-   **Hiện vẫn chưa chạy được từ source, nói thẳng để bạn khỏi mất công debug.**
-   Tính tới bản này, `app/ui/main_window.py` mới khôi phục được 1/207 code object
-   nên cửa sổ chính còn trống; `import main` thì OK nhưng nạp `app.ui.control_panel`
-   sẽ fail. Muốn dùng ngay, tải Release zip ở mục trên. Muốn đóng góp, hãy sửa các
-   module rồi chạy `tools/audit_installed_app.py` — tool dựng thật cửa sổ của **bản đã
-   cài** nên bắt được cả lỗi mà `import` không lộ.
+### Chạy thử
+```bash
+git clone https://github.com/tinhatinh/Winterboy-Studio.git
+cd Winterboy-Studio
+pip install -r requirements.txt
+python main.py
+```
+`tkinter` đi kèm CPython nên không cần cài. Nhóm nặng (torch / onnxruntime cho
+ZeroTTS, demucs cho tách lời) có chú thích riêng trong `requirements.txt`.
+
+Muốn đóng gói thành `.exe`: chạy `build.bat`, kết quả ở `dist/`.
+
+Trước khi mở PR, chạy `python tools/check_source.py --damaged` để chắc không có file
+nào vừa sửa thành mã không hợp lệ.
+
+> **Cần dùng ngay hôm nay?** Lấy bản đóng gói ở mục [Releases](../../releases).
+> Source của ứng dụng đang được cập nhật dần cho khớp bản phát hành, nên một số
+> module chưa chạy được từ mã nguồn.
 
 ---
 
