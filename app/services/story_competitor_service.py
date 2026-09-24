@@ -17,7 +17,7 @@ PRESETS_DIR = ROOT_DIR / 'presets'
 COMPETITORS_FILE = PRESETS_DIR / 'story_competitors.json'
 
 # Ba kênh mẫu dựng sẵn, lấy nguyên văn từ bản đã phát hành (không tự chế nội dung).
-DEFAULT_COMPETITOR_CHANNELS = {
+DEFAULT_COMPETITOR_CHANNELS: dict[str, dict[str, Any]] = {
     'Lady Jaki FitzHerbert': {
         'id': 'lady_jaki_fitzherbert',
         'name': 'Lady Jaki FitzHerbert',
@@ -91,7 +91,8 @@ DEFAULT_COMPETITOR_CHANNELS = {
 
 
 def load_competitor_channels() -> dict[str, dict[str, Any]]:
-    '''Đọc danh sách Hồ Sơ Kênh Đối Thủ, tự ghi lại bản mặc định nếu chưa có file.'''
+    '''Tải danh sách các hồ sơ preset kênh đối thủ từ file story_competitors.json.
+    Nếu chưa có, tự động khởi tạo các preset mẫu chuẩn.'''
     PRESETS_DIR.mkdir(parents = True, exist_ok = True)
     if not COMPETITORS_FILE.is_file():
         save_competitor_channels(DEFAULT_COMPETITOR_CHANNELS)
@@ -111,13 +112,14 @@ def load_competitor_channels() -> dict[str, dict[str, Any]]:
 
 
 def save_competitor_channels(channels: dict[str, dict[str, Any]]) -> None:
+    '''Lưu danh sách kênh đối thủ vào file presets/story_competitors.json.'''
     PRESETS_DIR.mkdir(parents = True, exist_ok = True)
     COMPETITORS_FILE.write_text(json.dumps(channels, ensure_ascii = False, indent = 2, default = str), 
        encoding = 'utf-8')
 
 
 def get_competitor_channel(channel_name: str) -> dict[str, Any] | None:
-    '''Tra theo tên chính xác, rồi mới thử khớp không phân biệt hoa thường/handle.'''
+    '''Tìm preset kênh đối thủ theo tên hoặc handle.'''
     all_ch = load_competitor_channels()
     if channel_name in all_ch:
         return all_ch[channel_name]
@@ -129,7 +131,7 @@ def get_competitor_channel(channel_name: str) -> dict[str, Any] | None:
 
 
 def save_or_update_competitor_channel(channel_data: dict[str, Any]) -> str:
-    '''Lưu mới hoặc ghi đè hồ sơ; giữ created_at cũ, luôn cập nhật updated_at.'''
+    '''Thêm mới hoặc cập nhật thông tin preset kênh đối thủ.'''
     name = (channel_data.get('name') or channel_data.get('handle') or 'Kênh Đối Thủ Mới').strip()
     all_ch = load_competitor_channels()
     existing = all_ch.get(name, { })
@@ -143,6 +145,7 @@ def save_or_update_competitor_channel(channel_data: dict[str, Any]) -> str:
 
 
 def delete_competitor_channel(channel_name: str) -> bool:
+    '''Xóa một preset kênh đối thủ khỏi hệ thống.'''
     all_ch = load_competitor_channels()
     if channel_name in all_ch:
         del all_ch[channel_name]
@@ -152,4 +155,5 @@ def delete_competitor_channel(channel_name: str) -> bool:
 
 
 def get_all_competitor_names() -> list[str]:
+    '''Trả về danh sách tất cả tên kênh đối thủ hiện có.'''
     return list(load_competitor_channels().keys())

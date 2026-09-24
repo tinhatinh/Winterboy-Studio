@@ -4,4 +4,4 @@
 '''Auto Render application package.'''
 import os
 os.environ.setdefault('PYGAME_HIDE_SUPPORT_PROMPT', '1')
-__version__ = '3.5.6'
+__version__ = '1.01'

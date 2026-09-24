@@ -44,7 +44,15 @@ RESTORED = [
 
 # Khóa cứng: nhóm này phải GIỮ bytecode y hệt bản đã phát hành. Sửa mấy file này là
 # có ý thức hoặc phải cập nhật danh sách kèm lý do — không được lệch âm thầm.
+#
+# Từ 2026-09-24 `compare_bytecode` so cả **co_consts**, không chỉ chuỗi lệnh. Trước đó
+# nó chỉ nhìn arg của LOAD_CONST (là CHỈ SỐ), nên đổi chữ trong chuỗi/docstring hay
+# bọc ngoặc kép một annotation vẫn báo "KHỚP HOÀN HẢO". Bẫy này đã làm main.py lệch
+# thật mà không ai thấy: 'Winterboy Studio' vs 'Winterboy studio', __version__ '3.5.6'
+# vs '1.01', AppUserModelID '...1.0' vs '...1.01', và gọi AttachThreadInput qua
+# kernel32 thay vì user32.
 BYTE_EXACT = [
+    'app/__init__.py',
     'app/services/capcut_common_task_client.py',
     'app/services/demucs_separator.py',
     'app/services/edge_tts_engine.py',
@@ -53,14 +61,18 @@ BYTE_EXACT = [
     'app/services/log_cleaner.py',
     'app/services/media_probe.py',
     'app/services/preset_manager.py',
+    'app/services/story_competitor_service.py',
     'app/services/subtitle_layout.py',
     'app/services/trim_ranges.py',
     'app/services/tts_preview.py',
+    'app/services/voice_engine/plugin_base.py',
     'app/services/voice_engine/zerotts/codec.py',
     'app/services/voice_engine/zerotts/text_norm/vi_normalizer.py',
+    'app/services/voice_engine/zerotts/cli.py',
     'app/services/voice_engine/zerotts_engine.py',
     'app/ui/fluent_icons.py',
     'app/ui/modules/module_subtitle.py',
+    'main.py',
 ]
 
 

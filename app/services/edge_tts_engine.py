@@ -225,8 +225,7 @@ def list_edge_tts_options() -> list[str]:
 
 
 def normalize_voice(voice: str | None) -> str:
-    '''
-    UI có thể chọn 'vi-VN-HoaiMyNeural|Nữ - ...' hoặc chỉ nhãn hiển thị 'Nữ - Hoài My'.
+    '''UI có thể chọn 'vi-VN-HoaiMyNeural|Nữ - ...' hoặc chỉ nhãn hiển thị 'Nữ - Hoài My'.
     Luôn chuẩn hoá về voice ID chính xác của Microsoft Edge.
     '''
     if not voice:

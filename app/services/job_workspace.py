@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Quản lý workspace bền vững cho từng tác vụ của Winterboy Studio.
+'''Quản lý workspace bền vững cho từng tác vụ của Winterboy studio.
 
 Không dùng ``temp`` cho dữ liệu người dùng.  Mỗi lần STT, dịch hoặc render
 đều có một thư mục mẹ riêng trong ``output/jobs`` để dễ kiểm tra và không ghi

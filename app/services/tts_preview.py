@@ -37,6 +37,7 @@ VOICE_SAMPLE_TEXTS: dict[str, str] = {
 
 
 def get_sample_text_for_voice(voice: str, default: str = PREVIEW_TEXT) -> str:
+    '''Return language-appropriate sample text based on voice identifier.'''
     v = (voice or '').strip().lower()
     if 'multilingual' in v or 'tiếng việt' in v or 'tieng viet' in v:
         return VOICE_SAMPLE_TEXTS['vi']
@@ -125,7 +126,7 @@ def bundled_sample_path(provider: str, voice: str) -> Path:
 def is_tts_preview_cached(*, provider: str, voice: str,
                           speed: str | float = '1.0',
                           model_id: str = 'eleven_multilingual_v2',
-                          text: str = PREVIEW_TEXT) -> 'Path | None':
+                          text: str = PREVIEW_TEXT) -> Path | None:
     '''Return the cached sample Path if it already exists, else None.'''
     provider = (provider or 'Edge TTS').strip()
     voice = (voice or '').strip()

@@ -329,8 +329,8 @@ class ZeroTTSEngine:
 
         audio = tts.synthesize(
             clean_text,
-            clean_voice,
-            cfg_scale=cfg_scale)
+            voice = clean_voice,
+            cfg_scale = cfg_scale)
 
         if not out_path:
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:

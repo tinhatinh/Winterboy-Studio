@@ -31,7 +31,24 @@ JUMPS = {'FOR_ITER', 'POP_JUMP_IF_FALSE', 'POP_JUMP_IF_TRUE', 'POP_JUMP_IF_NONE'
          'POP_JUMP_IF_NOT_NONE', 'JUMP_FORWARD', 'JUMP_BACKWARD', 'SEND',
          'JUMP_BACKWARD_NO_INTERRUPT', 'RETURN_GENERATOR'}
 SHAPE = ('name', 'argcount', 'kwonly', 'posonly', 'nlocals', 'stack', 'flags',
-         'varnames', 'cellvars', 'freevars')
+         'varnames', 'cellvars', 'freevars', 'consts')
+
+
+def _consts(code):
+    '''Mọi hằng số của code object, gồm cả chuỗi.
+
+    LOAD_CONST mang arg là CHỈ SỐ vào co_consts, nên đổi nội dung chuỗi thì lệnh
+    vẫn y hệt và phép so lệnh không hề biết. Đây chính là lỗ hổng đã cho phép
+    'Winterboy Studio' lọt qua trong khi bản phát hành ghi 'Winterboy studio'.
+    Code object lồng nhau chỉ lấy tên: thân nó được so riêng ở vòng lặp khác.
+    '''
+    out = []
+    for c in code.co_consts:
+        if hasattr(c, 'co_name') and hasattr(c, 'co_code'):
+            out.append(('CODE', c.co_qualname))
+        else:
+            out.append(norm_arg(c))
+    return tuple(out)
 
 for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, 'reconfigure'):
@@ -64,7 +81,7 @@ def norm_arg(arg, opname=''):
 
 
 def fingerprint(code):
-    '''Vân tay đệ quy: hình dạng code object + chuỗi lệnh.'''
+    '''Vân tay đệ quy: hình dạng code object + hằng số + chuỗi lệnh.'''
     ops = []
     for i in dis.get_instructions(code):
         if i.opname in SKIP:
@@ -72,7 +89,8 @@ def fingerprint(code):
         ops.append((i.opname, norm_arg(i.arg, i.opname)))
     head = (code.co_name, code.co_argcount, code.co_kwonlyargcount,
             code.co_posonlyargcount, code.co_nlocals, code.co_stacksize,
-            code.co_flags, code.co_varnames, code.co_cellvars, code.co_freevars)
+            code.co_flags, code.co_varnames, code.co_cellvars, code.co_freevars,
+            _consts(code))
     return head + (tuple(ops),)
 
 
@@ -104,6 +122,14 @@ def diff_seq(a, b, path, bad):
             if x != y:
                 if k == 'flags':            # cờ code object (generator/async) đổi theo cú pháp
                     bad.append((path, f'flags repo={x} ref={y}'))
+                elif k == 'consts':
+                    sr = [c for c in x if isinstance(c, str)]
+                    sf = [c for c in y if isinstance(c, str)]
+                    only = 'repo ' + _brief([c for c in sr if c not in sf]) + \
+                           ' | ref ' + _brief([c for c in sf if c not in sr])
+                    bad.append((path, 'hằng số chuỗi lệch nhau: ' + only
+                                if (len(sr) != len(sf) or set(sr) != set(sf))
+                                else f'hình dạng consts: repo={_brief(x)} ref={_brief(y)}'))
                 else:
                     bad.append((path, f'hình dạng {k}: repo={_brief(x)} ref={_brief(y)}'))
         return

@@ -58,7 +58,7 @@ def cmd_say(a: argparse.Namespace) -> int:
     tts.save_audio(audio, a.out)
     dur = audio.shape[-1] / tts.sample_rate
     speed = dur / elapsed if elapsed > 0 else float('inf')
-    print(f'''{a.out} {dur:.2f}s audio in {elapsed:.2f}s ({speed:.1f}x realtime)''')
+    print(f'''{a.out}  {dur:.2f}s audio in {elapsed:.2f}s ({speed:.1f}x realtime)''')
     return 0
 
 
