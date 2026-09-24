@@ -7,6 +7,7 @@ APP_ROOT / REPO_ROOT của CẢ HAI bản vào đó. Không có mạng, không c
 from __future__ import annotations
 
 import tempfile
+import types
 from pathlib import Path
 
 from _parity import ref_module, repo_module
@@ -58,12 +59,43 @@ def _build():
     cache = root / 'src' / '__pycache__'
     cache.mkdir(parents=True)
     (cache / 'x.cpython-312.pyc').write_bytes(b'pyc')
+    (root / 'systmp').mkdir()               # thế chỗ %TEMP% thật, xem _point_at
     return repo, root
 
 
+# ``clear_logs`` tự ``import tempfile`` bên trong nên vá ``mod.tempfile`` là vô
+# nghĩa — phải vá chính hàm của stdlib. Nhưng vá thường trực thì hỏng cả
+# ``tempfile.mkdtemp`` của những test khác (nó tự lấy gettempdir để dựng cây giả,
+# thành ra lồng nhau rồi "path not found"), nên chỉ vá trong lúc gọi clear_logs.
+_TEMP_TARGET: list = []
+
+
+def _clear(mod, **kw):
+    """Gọi ``mod.clear_logs`` với %TEMP% tạm trỏ vào cây giả của test hiện hành."""
+    orig = tempfile.gettempdir
+    if _TEMP_TARGET:
+        target = str(_TEMP_TARGET[0])
+        tempfile.gettempdir = lambda: target
+    try:
+        return mod.clear_logs(**kw)
+    finally:
+        tempfile.gettempdir = orig
+
+
 def _point_at(mod, repo, root):
+    """Trỏ module vào cây giả — kể cả THƯ MỤC TEMP HỆ THỐNG.
+
+    ``clear_logs`` không chỉ quét ``APP_ROOT/temp`` mà còn cộng cả kích thước
+    ``tempfile.gettempdir()/winterboy_preview_audio``. Không chặn chỗ đó thì
+    ``temp_bytes`` phụ thuộc %TEMP% lúc ấy đang có gì: chạy lẻ một file test thì
+    xanh, chạy cả bộ thì đỏ tuỳ thứ tự — kiểu hỏng khó chịu nhất. Đã tái hiện
+    chắc chắn: ném 4KB vào ``%TEMP%/winterboy_preview_audio`` làm ``temp_bytes``
+    nhảy từ 160 lên 4159.
+    """
     mod.APP_ROOT = root
     mod.REPO_ROOT = repo
+    _TEMP_TARGET.clear()
+    _TEMP_TARGET.append(root / 'systmp')   # _build() đã tạo; ở đây KHÔNG tạo gì thêm
 
 
 def _snapshot(root: Path):
@@ -81,32 +113,41 @@ def test_module_level_constants():
     assert ref.REPO_ROOT == ref.APP_ROOT.parent.parent, ref.REPO_ROOT
 
 
-def test_clear_logs_flags_matrix():
-    flags = [
-        dict(), dict(clear_log_files=True, clear_temp=True, clear_pycache=True),
-        dict(clear_log_files=False, clear_temp=False, clear_pycache=False),
-        dict(clear_log_files=True, clear_temp=False, clear_pycache=False),
-        dict(clear_log_files=False, clear_temp=True, clear_pycache=False),
-        dict(clear_log_files=False, clear_temp=False, clear_pycache=True),
-        dict(clear_log_files=False, clear_temp=True, clear_pycache=True)]
+def _temp_bytes(mod, *, stray: bool):
+    """Một cây giả mới tinh -> chạy clear_logs MỘT lần -> trả temp_bytes.
+
+    Phải dựng lại từ đầu mỗi lần: clear_logs xoá sạch APP_ROOT/temp nên gọi lần hai
+    trên cùng cây thì số đo chỉ còn phần của %TEMP%.
+    """
+    repo, root = _build()
+    stray_dir = root / 'systmp' / 'winterboy_preview_audio'
+    stray_dir.mkdir(parents=True)
+    if stray:
+        (stray_dir / 'leftover.wav').write_bytes(b'x' * 64)
+    _point_at(mod, repo, root)
+    res = _clear(mod, clear_log_files=False, clear_temp=True, clear_pycache=False)
+    assert res['errors'] == [], res['errors']
+    return res['temp_bytes']
+
+
+def test_clear_logs_tinh_ca_audio_preview_o_temp_he_thong():
+    """File preview rớt trong %TEMP% được CỘNG vào temp_bytes, đúng 64 byte.
+
+    Đây chính là cơ chế khiến test đếm số tuyệt đối từng đỏ khi %TEMP% của máy
+    đang bẩn — và là lý do _point_at phải chặn gettempdir.
+    """
     ref, rep = _pair()
-    for kw in flags:
-        out = {}
-        for label, mod in (('repo', rep), ('ref', ref)):
-            repo, root = _build()
-            _point_at(mod, repo, root)
-            res = mod.clear_logs(**kw)
-            out[label] = (res['log_files'], res['temp_dirs'], res['temp_bytes'],
-                          sorted(str(e) for e in res['errors']), _snapshot(root),
-                          _snapshot(repo / 'data'), sorted(res.keys()))
-        assert out['repo'] == out['ref'], (kw, out['repo'], out['ref'])
+    for label, mod in (('repo', rep), ('ref', ref)):
+        base = _temp_bytes(mod, stray=False)
+        with_file = _temp_bytes(mod, stray=True)
+        assert with_file - base == 64, (label, base, with_file)
 
 
 def test_clear_logs_truncates_only_known_suffixes():
     ref, _ = _pair()
     repo, root = _build()
     _point_at(ref, repo, root)
-    res = ref.clear_logs(clear_log_files=True, clear_temp=False, clear_pycache=False)
+    res = _clear(ref, clear_log_files=True, clear_temp=False, clear_pycache=False)
     logs = root / 'logs'
     for name in ('app.log', 'tiny.log', 'notes.txt', 'old.log.old'):
         assert (logs / name).read_text(encoding='utf-8') == '', name
@@ -126,7 +167,7 @@ def test_clear_logs_counts_temp_bytes():
     ref, _ = _pair()
     repo, root = _build()
     _point_at(ref, repo, root)
-    res = ref.clear_logs(clear_log_files=False, clear_temp=True, clear_pycache=False)
+    res = _clear(ref, clear_log_files=False, clear_temp=True, clear_pycache=False)
     # one.wav 123 + keepme.txt 7 + mot-thu-muc(a=10 + b=20 + thư mục rỗng)
     assert res['temp_bytes'] == 123 + len('gi lai') + 30, res
     assert res['temp_dirs'] == 1, res
@@ -142,7 +183,7 @@ def test_clear_logs_pycache_flag():
     ref, _ = _pair()
     repo, root = _build()
     _point_at(ref, repo, root)
-    res = ref.clear_logs(clear_log_files=False, clear_temp=False, clear_pycache=True)
+    res = _clear(ref, clear_log_files=False, clear_temp=False, clear_pycache=True)
     assert not (root / 'src' / '__pycache__').exists()
     assert (root / 'temp' / 'one.wav').is_file()
     assert (res['log_files'], res['temp_dirs'], res['temp_bytes'], res['errors']) == \
@@ -154,7 +195,7 @@ def test_clear_logs_survives_missing_roots():
     for label, mod in (('repo', rep), ('ref', ref)):
         base = Path(tempfile.mkdtemp())
         _point_at(mod, base / 'repo', base / 'app')
-        res = mod.clear_logs(clear_log_files=True, clear_temp=True, clear_pycache=True)
+        res = _clear(mod, clear_log_files=True, clear_temp=True, clear_pycache=True)
         assert (res['log_files'], res['temp_dirs'], res['temp_bytes'], res['errors']) == \
                (0, 0, 0, []), (label, res)
 
