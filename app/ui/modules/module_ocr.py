@@ -26,9 +26,11 @@ class ModuleOcr(BaseModule):
     '''Thẻ OCR trong thanh điều khiển bên trái.'''
 
     def __init__(self, master, state: AppState, callbacks: 'dict'):
+        # KHÔNG được đặt tên hàm dựng UI là "_setup": tkinter.Widget._setup(master, cnf)
+        # là hàm nội bộ mà Frame.__init__ gọi lại — ghi đè là vỡ lúc tạo widget.
         super().__init__(master, 'OCR phụ đề trên video')
         self.state = state
-        self.callbacks = callbacks or { }
+        self.cb = callbacks or { }
         self._worker: threading.Thread | None = None
         self._cancel = threading.Event()
         self._q = queue.Queue()
@@ -39,11 +41,11 @@ class ModuleOcr(BaseModule):
         self.var_min = ctk.StringVar(value='0.3')
         self.var_out = ctk.StringVar(value='')
 
-        self._setup()
+        self._build_ui()
         self.sync_from_state()
 
     # ------------------------------------------------------------------ UI
-    def _setup(self) -> None:
+    def _build_ui(self) -> None:
         self.section('Video cần OCR', first = True)
         self.stack('Tệp video', lambda parent: ctk.CTkEntry(
             parent, textvariable = self.var_video, placeholder_text = 'chưa chọn video'))

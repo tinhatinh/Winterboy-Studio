@@ -25,6 +25,10 @@ SHORTCUT = DESKTOP / 'Winterboy OCR.lnk'
 FILES = [
     (REPO / 'app/services/videocr_ocr.py', APP / '_internal/app/services/videocr_ocr.py'),
     (REPO / 'app/ui/modules/module_ocr.py', APP / '_internal/app/ui/modules/module_ocr.py'),
+    # control_panel.py đã được khôi phục khớp bytecode 100% với bản phát hành, chỉ
+    # chênh đúng 5 chỗ của tính năng OCR (xem `compare_bytecode`), nên thả vào app
+    # để mục "OCR" xuất hiện trên thanh bên.
+    (REPO / 'app/ui/control_panel.py', APP / '_internal/app/ui/control_panel.py'),
     (REPO / 'tools/ocr_tool.pyw', APP / 'ocr_tool.pyw'),
 ]
 PYWARE = Path(sys.base_prefix) / 'pythonw.exe'
@@ -45,9 +49,9 @@ def install() -> int:
         if p.is_dir():
             shutil.rmtree(p, ignore_errors=True)
     _make_shortcut()
-    print('\nXong. Bấm "Winterboy OCR" ngoài Desktop, hoặc chạy ocr_tool.pyw trong thư mục app.')
-    print('Lưu ý: mục OCR trên thanh bên của cửa sổ chính chưa xuất hiện — cần khôi phục')
-    print('       control_panel.py khớp bytecode trước đã (xem docs/RESTORE_STATUS.md).')
+    print('\nXong. Mục "OCR" đã nằm trên thanh bên của cửa sổ chính.')
+    print('     Bấm "Winterboy OCR" ngoài Desktop nếu muốn chạy riêng, khỏi mở app.')
+    print('     Gỡ sạch: python tools/install_ocr_into_app.py --revert')
     return 0
 
 
