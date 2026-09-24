@@ -9,6 +9,7 @@ trạng thái dịch của các module khác.
 '''
 from __future__ import annotations
 
+import queue
 import threading
 from pathlib import Path
 from tkinter import filedialog
@@ -30,6 +31,7 @@ class ModuleOcr(BaseModule):
         self.callbacks = callbacks or { }
         self._worker: threading.Thread | None = None
         self._cancel = threading.Event()
+        self._q = queue.Queue()
 
         self.var_video = ctk.StringVar(value='')
         self.var_lang = ctk.StringVar(value='ch')
@@ -127,15 +129,38 @@ class ModuleOcr(BaseModule):
         self._cancel.clear()
         self.text.configure(state = 'normal')
         self.text.delete('1.0', 'end')
+        self.text.configure(state = 'disabled')
         self._status('Đang OCR…')
         self._worker = threading.Thread(target = self._work, args = (video, out, opts),
                                         daemon = True)
         self._worker.start()
+        # chỉ luồng chính được đụng widget: nền bỏ việc vào hàng đợi, luồng chính hút nó
+        self.after(80, self._pump)
 
     def _work(self, video: Path, out: Path, opts) -> None:
-        res = videocr_ocr.run_ocr(video, out, opts = opts, cancel_event = self._cancel,
-                                  progress = lambda frac, label: self._ui(self._progress, frac, label))
-        self._ui(self._finish, res)
+        '''Chạy ở thread nền — KHÔNG gọi widget hay self.after từ đây.'''
+        try:
+            res = videocr_ocr.run_ocr(video, out, opts = opts, cancel_event = self._cancel,
+                                      progress = lambda frac, label: self._q.put(('tick', frac, label)))
+        except BaseException as exc:                       # noqa: BLE001
+            self._q.put(('crash', f'{type(exc).__name__}: {exc}'))
+            return
+        self._q.put(('done', res))
+
+    def _pump(self) -> None:
+        try:
+            while True:
+                item = self._q.get_nowait()
+                if item[0] == 'tick':
+                    self._progress(item[1], item[2])
+                elif item[0] == 'crash':
+                    self._status(f'Lỗi: {item[1]}')
+                elif item[0] == 'done':
+                    self._finish(item[1])
+        except queue.Empty:
+            pass
+        if self._worker and self._worker.is_alive():
+            self.after(80, self._pump)
 
     def stop(self) -> None:
         if self._worker and self._worker.is_alive():
@@ -180,17 +205,8 @@ class ModuleOcr(BaseModule):
             os.startfile(str(folder))                       # chỉ Windows, đúng như app
 
     def _status(self, text) -> None:
-        self._ui(self._set_status, text)
-
-    def _set_status(self, text) -> None:
+        '''Chỉ được gọi từ luồng chính (nền đẩy việc qua _pump).'''
         try:
             self.lbl_status.configure(text = text)
-        except Exception:
-            pass
-
-    def _ui(self, fn, *a) -> None:
-        '''Đẩy việc về luồng Tk — OCR chạy ở nền nên không được đụng widget trực tiếp.'''
-        try:
-            self.after(0, lambda: fn(*a))
         except Exception:
             pass
