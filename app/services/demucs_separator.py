@@ -63,8 +63,42 @@ def _demucs_command() -> list[str]:
         'Không tìm thấy Demucs trong Python/Scripts. Cài dependencies bằng: pip install -r requirements.txt')
 
 
+def _version_from_command(command: 'list[str] | None') -> str:
+    '''Suy phiên bản Demucs từ thư mục dist-info nằm cạnh chính file exe.
+
+    Bản đóng gói (PyInstaller) chỉ thấy .dist-info nào được bỏ vào bundle, mà demucs
+    thì KHÔNG nằm trong app — app chỉ gọi ``demucs.exe`` của một Python hệ thống. Vì vậy
+    ``importlib.metadata.version('demucs')`` báo "No package metadata was found" dù lệnh
+    chạy tốt. Đọc tên thư mục ``demucs-<version>.dist-info`` cạnh ``Scripts`` giải quyết
+    đúng trường hợp này và giữ khoá cache ổn định giữa bản cài và bản chạy từ source.
+    '''
+    if not command:
+        return ''
+    head = Path(str(command[0]))
+    if head.name.casefold() != 'demucs.exe':
+        return ''
+    scripts = head.parent
+    for root in (scripts.parent / 'Lib' / 'site-packages', scripts / 'site-packages'):
+        try:
+            hits = sorted(root.glob('demucs-*.dist-info'))
+        except OSError:
+            continue
+        if hits:
+            name = hits[-1].name
+            return name[len('demucs-'):-len('.dist-info')]
+    return ''
+
+
 def demucs_runtime_status() -> dict[str, object]:
-    '''Trạng thái backend; chỉ được gọi trong worker khi người dùng bật Demucs.'''
+    '''Trạng thái backend; chỉ được gọi trong worker khi người dùng bật Demucs.
+
+    "Có chạy được hay không" chỉ phụ thuộc vào việc tìm thấy lệnh Demucs: Demucs chạy ở
+    TIẾN TRÌNH CON bằng Python hệ thống, nên app đông lạnh không cần torch hay metadata
+    của demucs bên trong bundle. Trước đây hai thông tin chẩn đoán (số phiên bản, torch)
+    nằm chung một khối try với bước tìm lệnh, nên chỉ cần thiếu metadata là
+    ``available`` thành False và cả lần render MP4 chết với lỗi
+    "No package metadata was found for demucs".
+    '''
     status = {
         'available': False,
         'command': None,
@@ -73,14 +107,21 @@ def demucs_runtime_status() -> dict[str, object]:
         'demucs_version': ''}
     try:
         status['command'] = _demucs_command()
+    except Exception as exc:
+        status['error'] = str(exc)
+        return status
+    status['available'] = True
+    try:
         from importlib.metadata import version
         status['demucs_version'] = version('demucs')
+    except Exception:
+        status['demucs_version'] = _version_from_command(status['command'])
+    try:
         import torch
         status['torch_version'] = str(torch.__version__)
         status['device'] = 'cuda' if torch.cuda.is_available() else 'cpu'
-        status['available'] = True
-    except Exception as exc:
-        status['error'] = str(exc)
+    except Exception:
+        pass                                       # torch không đi kèm app -> giữ 'cpu'
     return status
 
 

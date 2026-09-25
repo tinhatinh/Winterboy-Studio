@@ -71,9 +71,13 @@ def check(name, fn):
 # --------------------------------------------------------------- mặt trận .py
 # Những file do tools/install_ocr_into_app.py thả vào app — bắt buộc khớp repo.
 MINE = {'app/services/videocr_ocr.py', 'app/services/video_preview.py',
-        'app/ui/modules/module_ocr.py', 'app/ui/control_panel.py'}
+        'app/ui/modules/module_ocr.py', 'app/ui/control_panel.py',
+        'app/services/demucs_separator.py'}
 # control_panel được phép lệch ĐÚNG phần OCR (test_control_panel đã khoá điều này)
-EXPECTED_DRIFT = {'app/ui/control_panel.py': 5}
+# demucs_separator lệch vì fix lỗi "No package metadata was found for demucs" —
+# 4 chỗ: thêm _version_from_command, tách chẩn đoán khỏi kết luận "khả dụng".
+EXPECTED_DRIFT = {'app/ui/control_panel.py': 5,
+                  'app/services/demucs_separator.py': 4}
 
 
 def audit_overrides():
